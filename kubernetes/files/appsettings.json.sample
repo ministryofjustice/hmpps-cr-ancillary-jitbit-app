@@ -1,0 +1,39 @@
+{
+	"Logging": {
+		"LogLevel": {
+				"Default": "Debug",
+				"Microsoft": "Warning",
+				"Microsoft.Hosting.Lifetime": "Information",
+				"Microsoft.ASPNetCore": "Debug"
+		}
+	},
+	"AllowedHosts": "*",
+
+	"SendEmailErrorReports": "false",
+	"EmailErrorTo": "support@myserver.com",
+	"EmailErrorFrom": "admin@myserver.com",
+	"EmailErrorSMTPHost": "mail.myserver.com",
+	"EmailErrorSMTPPort": "25",
+	"EmailErrorUseSSL": "false",
+	"EmailErrorSMTPUser": "admin@myserver.com",
+	"EmailErrorSMTPPassword": "password",
+	"EmailErrorPOPHost": "mail.myserver.com",
+	"EmailErrorPOPPort": "110",
+	"EmailErrorPOPUser": "user",
+	"EmailErrorPOPPsw": "password",
+	"EmailErrorPOPUseSSL": "false",
+	"LogErrors": "true",
+	"AttachmentsPath": "D:\\OfficeAdmin\\",
+	"DisableMailChecker": "",
+	"DisallowChangingAvatars": "false",
+	"AppURL": "https://<fqdn>/",
+	"WindowsAdminUsername": "DOMAIN\\Username",
+	"MailPswEncryptKey": "",
+	"DisableWeakCiphers": "false",
+	"UnobtrusiveJavaScriptEnabled": "true",
+	"PreserveLoginUrl": "true",
+
+	"ConnectionStrings": {
+		"DBConnectionString": "user id=<db user>;data source=<hostname>;initial catalog=<db name>;password=<password>"
+	}
+}

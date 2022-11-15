@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jitbit-dev-ing
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/whitelist-source-range: 18.130.108.149/32,35.176.14.16/32,35.177.83.160/32,35.177.125.252/32,35.177.137.160/32,51.149.249.0/29,51.149.249.32/29,51.149.250.0/24,51.149.251.0/24,52.56.62.0/24,62.25.106.209/32,62.25.109.197/32,81.134.202.29/32,194.33.192.0/25,194.33.193.0/25,194.33.196.0/25,194.33.197.0/25,194.33.248.0/29,194.33.249.0/29,195.59.75.0/24,195.92.38.16/28,195.92.40.49/32,212.137.36.230/32,213.121.161.112/28,20.49.246.205/32,20.108.103.72/32,51.143.235.180/32,20.49.162.18/32
+    external-dns.alpha.kubernetes.io/set-identifier: jitbit-dev-ing-hmpps-community-rehabilitation-ancilliary-jitbit-dev-green
+    external-dns.alpha.kubernetes.io/aws-weight: "100"
+spec:
+  tls:
+  - hosts:
+    - jitbit-dev.apps.live.cloud-platform.service.justice.gov.uk
+  rules:
+  - host: jitbit-dev.apps.live.cloud-platform.service.justice.gov.uk
+    http:
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: jitbit-dev-service
+            port:
+              number: 5000

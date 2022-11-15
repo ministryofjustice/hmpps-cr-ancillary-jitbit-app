@@ -8,3 +8,8 @@ env/
 *.code-workspace
 *.sha256
 terraform.tfstate
+
+app/
+appsettings.json
+useful-scripts.sh
+*secret*
