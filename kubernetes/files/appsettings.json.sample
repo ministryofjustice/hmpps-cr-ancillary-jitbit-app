@@ -36,4 +36,9 @@
 	"ConnectionStrings": {
 		"DBConnectionString": "user id=<db user>;data source=<hostname>;initial catalog=<db name>;password=<password>"
 	}
+
+  "AttachmentsS3Bucket" : "mybucket",
+  "AttachmentsS3Login" : "XXXXXXXXXXXXX",
+  "AttachmentsS3Password" : "XXX/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  "AttachmentsS3Region" : "eu-west-2",
 }
