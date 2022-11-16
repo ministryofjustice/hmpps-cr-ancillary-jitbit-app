@@ -12,5 +12,4 @@ terraform.tfstate
 
 app/
 appsettings.json
-useful-scripts.sh
 *secret*
