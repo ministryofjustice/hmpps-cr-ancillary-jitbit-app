@@ -9,16 +9,16 @@ metadata:
     external-dns.alpha.kubernetes.io/aws-weight: "100"
 spec:
   tls:
-  - hosts:
-    - jitbit-dev.apps.live.cloud-platform.service.justice.gov.uk
+    - hosts:
+        - jitbit-dev.apps.live.cloud-platform.service.justice.gov.uk
   rules:
-  - host: jitbit-dev.apps.live.cloud-platform.service.justice.gov.uk
-    http:
-      paths:
-      - path: /
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: jitbit-dev-service
-            port:
-              number: 5000
+    - host: jitbit-dev.apps.live.cloud-platform.service.justice.gov.uk
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: jitbit-dev-service
+                port:
+                  number: 5000
