@@ -3,8 +3,14 @@
 coverage/
 venv/
 env/
+old/
 .DS_STORE
 .vscode
 *.code-workspace
 *.sha256
 terraform.tfstate
+
+
+docker/app
+
+*secret*
