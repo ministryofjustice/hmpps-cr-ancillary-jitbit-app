@@ -1,0 +1,20 @@
+name: Image Build & Push
+#on:
+#  pull_request:
+#    types: [???]
+
+#permissions:
+#  contents: read???
+
+jobs:
+  image-build:
+    runs-on: ubuntu-latest
+    steps:
+        #- name: Pull down S3 app files
+        #uses: actions/
+      - name: Checkout Jitbit app repo
+        uses: actions/checkout@v3
+        #- name: Docker build
+        #- name: Tag docker file
+        #- name: Push to core-shared-services ECR
+        #- name: Update task definition
