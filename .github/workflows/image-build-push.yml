@@ -1,7 +1,7 @@
 name: Image Build & Push
-#on:
-#  pull_request:
-#    types: [???]
+on:
+  push:
+    branches: [image-build-action]
 
 #permissions:
 #  contents: read???
