@@ -1,9 +1,7 @@
 FROM alpine:3.15
 
 # Add .NET dependencies, based on https://learn.microsoft.com/en-us/dotnet/core/install/linux-alpine
-RUN apk add bash icu-libs krb5-libs libgcc libintl libssl1.1 libstdc++ zlib && \
-  apk add libgdiplus --repository https://dl-3.alpinelinux.org/alpine/edge/testing/
-
+RUN apk add bash icu-libs krb5-libs libgcc libintl libssl1.1 libstdc++ zlib
 # Add dependencies needed by installer
 
 # Install dotnetcore runtime
