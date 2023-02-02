@@ -10,10 +10,10 @@ jobs:
   image-build:
     runs-on: ubuntu-latest
     steps:
-        #- name: Pull down S3 app files
-        #uses: actions/
       - name: Checkout Jitbit app repo
         uses: actions/checkout@v3
+      - name: Pull down S3 app files
+        run: aws s3 sync docker/app ${{ secrets.AMI_BUCKET }}/delius-jitbit/app --dryrun
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
         with:
