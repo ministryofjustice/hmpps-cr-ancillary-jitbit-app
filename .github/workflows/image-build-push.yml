@@ -14,7 +14,8 @@ jobs:
         #uses: actions/
       - name: Checkout Jitbit app repo
         uses: actions/checkout@v3
-        #- name: Docker build
+      - name: Docker build
+
         #- name: Tag docker file
         #- name: Push to core-shared-services ECR
         #- name: Update task definition
