@@ -35,7 +35,7 @@ jobs:
       - name: Get tag
         id: GetTag
         run: |
-          echo "Showing we can get the tag out for use in ECR iamge tags: ${{ steps.BumpVersionAndPushTag.outputs.new_tag }}""
+          echo "Showing we can get the tag out for use in ECR iamge tags: ${{ steps.BumpVersionAndPushTag.outputs.new_tag }}"
 
       - name: Pull down S3 app files
         run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app docker/app  --recursive
