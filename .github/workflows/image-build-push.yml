@@ -35,12 +35,15 @@ jobs:
       - name: Get tag
         id: GetTag
         run: |
-          echo "Showing we can get the tag out for use in ECR iamge tags: ${{ steps.BumpVersionAndPushTag.outputs.new_tag }}"
+          echo "Showing we can get the tag out for use in ECR image tags: ${{ steps.BumpVersionAndPushTag.outputs.new_tag }}"
 
       - name: Pull down S3 app files
         run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app docker/app  --recursive
       - name: Docker build
-        run: docker build --no-cache -t local/jitbit-app:0.1 ./docker
+        run: docker build --no-cache -t ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} ./docker
         #- name: Tag docker file
         #- name: Push to core-shared-services ECR
         #- name: Update task definition
+
+      - name: Docker push
+        run: docker push ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ steps.BumpVersionAndPushTag.outputs.new_tag }}
