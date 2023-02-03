@@ -19,7 +19,7 @@ jobs:
       - name: Checkout Jitbit app repo
         uses: actions/checkout@v3
       - name: Pull down S3 app files
-        run: aws s3 cp ${{ secrets.AMI_BUCKET }}/delius-jitbit/app docker/app --dryrun --recursive
+        run: aws s3 cp s3://${{ secrets.AMI_BUCKET }}/delius-jitbit/app docker/app --dryrun --recursive
       - name: Docker build
         run: docker build docker
         #- name: Tag docker file
