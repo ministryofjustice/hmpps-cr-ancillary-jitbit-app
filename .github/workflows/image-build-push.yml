@@ -44,6 +44,8 @@ jobs:
         #- name: Tag docker file
         #- name: Push to core-shared-services ECR
         #- name: Update task definition
+      - name: Docker login
+        run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
       - name: Docker push
         run: docker push ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ steps.BumpVersionAndPushTag.outputs.new_tag }}
