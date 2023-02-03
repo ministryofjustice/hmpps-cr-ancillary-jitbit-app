@@ -18,6 +18,25 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Checkout Jitbit app repo
         uses: actions/checkout@v3
+
+      - name: Bump version and push tag
+        id: BumpVersionAndPushTag
+        uses: anothrNick/github-tag-action@1.61.0 # Don't use @master unless you're happy to test the latest version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: false
+          DEFAULT_BUMP: minor # Making this default visible
+          INITIAL_VERSION: 0.0.0 # Making this default visible
+          TAG_CONTEXT: repo # Making this default visible
+          DRY_RUN: true
+          PRERELEASE: true
+          PRERELEASE_SUFFIX: ${{ github.ref_name }} # Branch name
+
+      - name: Get tag
+        id: GetTag
+        run: |
+          echo "Showing we can get the tag out for use in ECR iamge tags: ${{ steps.BumpVersionAndPushTag.outputs.new_tag }}""
+
       - name: Pull down S3 app files
         run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app docker/app  --recursive
       - name: Docker build
