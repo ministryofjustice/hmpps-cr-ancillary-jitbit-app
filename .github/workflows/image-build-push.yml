@@ -50,3 +50,6 @@ jobs:
       - name: Docker push
         if: contains(github.event.head_commit.message, 'ecr_push')
         run: docker push ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ steps.BumpVersionAndPushTag.outputs.new_tag }}
+
+      - name: Update task definition
+        run: aws ecs update-service --cluster delius-jitbit --service delius-jitbit-ecs-service --force-new-deployment
