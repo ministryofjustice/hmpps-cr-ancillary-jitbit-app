@@ -16,6 +16,7 @@ jobs:
           aws-access-key-id: ${{ secrets.CICD_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.CICD_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Checkout Jitbit app repo
         uses: actions/checkout@v3
 
@@ -39,22 +40,20 @@ jobs:
 
       - name: Pull down S3 app files
         run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app docker/app  --recursive
+
       - name: Docker build
         run: docker build --no-cache -t ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ steps.BumpVersionAndPushTag.outputs.new_tag }} ./docker
-        #- name: Tag docker file
-        #- name: Push to core-shared-services ECR
-        #- name: Update task definition
+
       - name: Docker login
         run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
       - name: Docker push
         if: contains(github.event.head_commit.message, 'ecr_push')
         run: docker push ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ steps.BumpVersionAndPushTag.outputs.new_tag }}
-      - name: Get task definition
+
+      - name: Update task definition
         run: |
           TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition delius-jitbit-task-definition)
           echo $TASK_DEFINITION | jq ".taskDefinition.containerDefinitions[0].image = \"${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ steps.BumpVersionAndPushTag.outputs.new_tag }}\" | .taskDefinition | del(.taskDefinitionArn) | del(.revision) | del(.status) | del(.requiresAttributes) | del(.compatibilities) | del(.registeredAt) | del(.registeredBy)" >new_task_def.json
           aws ecs register-task-definition --family delius-jitbit-task-definition --cli-input-json file://new_task_def.json
-
-      - name: Update task definition
-        run: aws ecs update-service --cluster delius-jitbit --service delius-jitbit-ecs-service --force-new-deployment 
+          aws ecs update-service --cluster delius-jitbit --service delius-jitbit-ecs-service --force-new-deployment 
