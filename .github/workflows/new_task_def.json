@@ -1,0 +1,40 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "delius-jitbit",
+      "image": "test",
+      "cpu": 1536,
+      "memory": 3072,
+      "portMappings": [
+        {
+          "containerPort": 5000,
+          "hostPort": 5000,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "AppURL",
+          "value": "https://delius-jitbit.hmpps-development.modernisation-platform.service.justice.gov.uk/"
+        }
+      ],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "secrets": [
+        {
+          "name": "ConnectionStrings__DBConnectionString",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:142262177450:secret:delius-jitbit-app-connection-string-xMnuvx"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "delius-jitbit-ecs",
+          "awslogs-region": "eu-west-2",
+          "awslogs-stream-prefix": "jitbit"
+        }
+      }
+    }
+  ]
+}

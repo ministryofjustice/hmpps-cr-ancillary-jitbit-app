@@ -53,7 +53,7 @@ jobs:
       - name: Get task definition
         run: |
           TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition delius-jitbit-task-definition)
-          echo $TASK_DEFINITION | jq '.taskDefinition.containerDefinitions[0].image = "test" | .taskDefinition | {containerDefinitions}' >new_task_def.json
+          echo $TASK_DEFINITION | jq '.taskDefinition.containerDefinitions[0].image = "test" | .taskDefinition | {containerDefinitions, executionRoleArn, family}' >new_task_def.json
           aws ecs register-task-definition --family delius-jitbit-task-definition --cli-input-json file://new_task_def.json
 
       - name: Update task definition
