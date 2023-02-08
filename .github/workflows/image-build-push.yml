@@ -45,6 +45,7 @@ jobs:
         run: docker build --no-cache -t ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ steps.BumpVersionAndPushTag.outputs.new_tag }} ./docker
 
       - name: Docker login
+        if: contains(github.event.head_commit.message, 'ecr_push')
         run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
       - name: Docker push
@@ -52,6 +53,7 @@ jobs:
         run: docker push ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ steps.BumpVersionAndPushTag.outputs.new_tag }}
 
       - name: Update task definition
+        if: contains(github.event.head_commit.message, 'ecr_push')
         run: |
           TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition delius-jitbit-task-definition)
           echo $TASK_DEFINITION | jq ".taskDefinition.containerDefinitions[0].image = \"${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ steps.BumpVersionAndPushTag.outputs.new_tag }}\" | .taskDefinition | del(.taskDefinitionArn) | del(.revision) | del(.status) | del(.requiresAttributes) | del(.compatibilities) | del(.registeredAt) | del(.registeredBy)" >new_task_def.json
