@@ -1,7 +1,8 @@
 name: image-build-push
 on:
-  push
-
+  push:
+    branches:
+      - 'feature/**'
 jobs:
   image-build:
     runs-on: ubuntu-latest
