@@ -1,10 +1,9 @@
 name: image-build-push
 on:
-  push:
-    branches: [image_build_action]
-
-#permissions:
-#  contents: read???
+  pull_request:
+    types: [opened, reopened]
+on:
+  push
 
 jobs:
   image-build:
@@ -32,11 +31,6 @@ jobs:
           DRY_RUN: true
           PRERELEASE: true
           PRERELEASE_SUFFIX: ${{ github.ref_name }} # Branch name
-
-      - name: Get tag
-        id: GetTag
-        run: |
-          echo "Showing we can get the tag out for use in ECR image tags: ${{ steps.BumpVersionAndPushTag.outputs.new_tag }}"
 
       - name: Pull down S3 app files
         run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app docker/app  --recursive
