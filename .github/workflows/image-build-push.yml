@@ -3,10 +3,12 @@ on:
   push:
     branches:
       - 'feature/**'
+  pull_request:
+    types: [opened, reopened]
+
 jobs:
   image-build:
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.message, 'ecr_push')
     steps:
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
