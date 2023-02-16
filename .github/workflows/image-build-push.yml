@@ -1,10 +1,5 @@
 name: image-build-push
-on:
-  push:
-    branches:
-      - 'feature/**'
-  pull_request:
-    types: [opened, reopened]
+on: [push, pull_request]
 
 jobs:
   image-build:
