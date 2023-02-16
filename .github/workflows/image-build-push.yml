@@ -1,5 +1,5 @@
 name: image-build-push
-on: [push, pull_request]
+on: push
 
 jobs:
   image-build:
