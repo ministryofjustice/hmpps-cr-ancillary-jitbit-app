@@ -26,6 +26,7 @@ jobs:
           TAG_CONTEXT: repo # Making this default visible
           PRERELEASE: true
           PRERELEASE_SUFFIX: ${{ github.ref_name }} # Branch name
+          DRY_RUN: ${{ github.ref != 'refs/heads/main' }} # Tag repo on main, not otherwise. Note we can still use the proposed dry-run tag to tag ECR images
 
       - name: Pull down S3 app files
         run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app docker/app  --recursive
