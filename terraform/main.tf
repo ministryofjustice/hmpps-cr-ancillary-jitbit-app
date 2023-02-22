@@ -45,23 +45,23 @@ module "deploy" {
   name                      = "delius-jitbit"
   vpc_id                    = "vpc-01d7a2da8f9f1dfec"
 
-  launch_type = "EC2"
+  launch_type  = "EC2"
   network_mode = "awsvpc"
 
-  task_cpu = "1536"
+  task_cpu    = "1536"
   task_memory = "3072"
 
   task_exec_role_arn = []
-  task_role_arn = []
+  task_role_arn      = []
 
   task_policy_arns = []
-#  capacity_provider_strategies = [
-#    {
-#      capacity_provider = "EC2"
-#      weight = 1
-#      base = 0
-#    }
-#  ]
+  #  capacity_provider_strategies = [
+  #    {
+  #      capacity_provider = "EC2"
+  #      weight = 1
+  #      base = 0
+  #    }
+  #  ]
 
   ecs_load_balancers = [
     {
