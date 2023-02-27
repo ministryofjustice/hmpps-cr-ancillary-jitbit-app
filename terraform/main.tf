@@ -53,7 +53,7 @@ data "aws_subnet" "private_subnets_c" {
 }
 
 module "deploy" {
-  source                    = "git::https://github.com/ministryofjustice/terraform-ecs//service?ref=225b45d2de8140601133e0add5a45cd557cd32ea"
+  source                    = "git::https://github.com/ministryofjustice/terraform-ecs//service?ref=2c33fa204d94c615d4d5f92469cd34ae85ad50e3"
   container_definition_json = module.container.json_map_encoded_list
   ecs_cluster_arn           = "arn:aws:ecs:eu-west-2:142262177450:cluster/hmpps-development-delius-jitbit-new"
   name                      = "delius-jitbit"
@@ -79,13 +79,13 @@ module "deploy" {
   #    }
   #  ]
 
-  # ecs_load_balancers = [
-  #   {
-  #     target_group_arn = "arn:aws:elasticloadbalancing:eu-west-2:142262177450:targetgroup/delius-jitbit/1e1f2f5f1f2f1f1f"
-  #     container_name   = "delius-jitbit"
-  #     container_port   = 5000
-  #   }
-  # ]
+  ecs_load_balancers = [
+    {
+      target_group_arn = "arn:aws:elasticloadbalancing:eu-west-2:142262177450:targetgroup/delius-jitbit-tg-development-new/9dce0b9265ed25e0"
+      container_name   = "delius-jitbit"
+      container_port   = 5000
+    }
+  ]
 
   security_group_ids    = ["sg-07a92e5d14a64479b"]
   alb_security_group_id = "sg-0f741aa47c861ed1a"
@@ -99,4 +99,19 @@ module "deploy" {
   ignore_changes_task_definition = false
 
   # assign_public_ip = true
+}
+
+terraform {
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "4.56.0"
+    }
+  }
+}
+
+# Configure the AWS Provider
+provider "aws" {
+  region = "eu-west-2"
 }
