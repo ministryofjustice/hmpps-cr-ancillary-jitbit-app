@@ -1,14 +1,22 @@
+locals {
+  app_name = "delius-jitbit"
+}
+
+data "aws_secretsmanager_secret" "connection_string" {
+  name = "${local.app_name}-app-connection-string"
+}
+
 module "container" {
   source                   = "git::https://github.com/cloudposse/terraform-aws-ecs-container-definition.git?ref=tags/0.58.1"
-  container_name           = "delius-jitbit"
-  container_image          = "374269020027.dkr.ecr.eu-west-2.amazonaws.com/delius-jitbit-ecr-repo:latest"
+  container_name           = local.app_name
+  container_image          = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:latest"
   container_memory         = "3072"
   container_cpu            = "1024"
   essential                = true
   readonly_root_filesystem = false
   environment = [{
     name  = "AppURL"
-    value = "https://delius-jitbit.hmpps-development.modernisation-platform.service.justice.gov.uk/"
+    value = "https://${local.app_name}.hmpps-development.modernisation-platform.service.justice.gov.uk/"
   }]
   port_mappings = [{
     containerPort = 5000
@@ -18,15 +26,15 @@ module "container" {
   log_configuration = {
     logDriver = "awslogs"
     options = {
-      "awslogs-group"         = "delius-jitbit-ecs"
-      "awslogs-region"        = "eu-west-2"
+      "awslogs-group"         = "${local.app_name}-ecs"
+      "awslogs-region"        = data.aws_region.current.name
       "awslogs-stream-prefix" = "jitbit"
     }
   }
   secrets = [
     {
       name      = "ConnectionStrings__DBConnectionString"
-      valueFrom = "arn:aws:secretsmanager:eu-west-2:142262177450:secret:delius-jitbit-app-connection-string-xMnuvx"
+      valueFrom = data.aws_secretsmanager_secret.connection_string.arn
     }
   ]
 }
@@ -34,9 +42,9 @@ module "container" {
 module "deploy" {
   source                    = "git::https://github.com/ministryofjustice/terraform-ecs//service?ref=2c33fa204d94c615d4d5f92469cd34ae85ad50e3"
   container_definition_json = module.container.json_map_encoded_list
-  ecs_cluster_arn           = "arn:aws:ecs:eu-west-2:142262177450:cluster/hmpps-development-delius-jitbit-new"
-  name                      = "delius-jitbit"
-  vpc_id                    = "vpc-01d7a2da8f9f1dfec"
+  ecs_cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}-new"
+  name                      = local.app_name
+  vpc_id                    = var.vpc_id
 
   launch_type  = "FARGATE"
   network_mode = "awsvpc"
@@ -44,24 +52,13 @@ module "deploy" {
   task_cpu    = "1024"
   task_memory = "3072"
 
-  task_exec_role_arn = "arn:aws:iam::142262177450:role/delius-jitbit-ecs-task-execution-role"
-  # task_role_arn      = []
+  task_exec_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.app_name}-ecs-task-execution-role"
 
-  environment = terraform.workspace
-
-  # task_policy_arns = []
-  #  capacity_provider_strategies = [
-  #    {
-  #      capacity_provider = "EC2"
-  #      weight = 1
-  #      base = 0
-  #    }
-  #  ]
-
+  environment = var.environment
   ecs_load_balancers = [
     {
-      target_group_arn = "arn:aws:elasticloadbalancing:eu-west-2:142262177450:targetgroup/delius-jitbit-tg-development-new/9dce0b9265ed25e0"
-      container_name   = "delius-jitbit"
+      target_group_arn = "arn:aws:elasticloadbalancing:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:targetgroup/delius-jitbit-tg-development-new/9dce0b9265ed25e0"
+      container_name   = local.app_name
       container_port   = 5000
     }
   ]
@@ -76,6 +73,4 @@ module "deploy" {
   ]
 
   ignore_changes_task_definition = false
-
-  # assign_public_ip = true
 }
