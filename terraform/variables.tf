@@ -1,9 +1,9 @@
 variable "vpc_id" {
-  type = string
+  type        = string
   description = "VPC ID for the VPC whose private subnets will host the application"
 }
 
 variable "environment" {
-  type = string
+  type        = string
   description = "Environment name"
 }
