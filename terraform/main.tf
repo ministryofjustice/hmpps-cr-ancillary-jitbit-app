@@ -109,6 +109,16 @@ terraform {
       version = "4.56.0"
     }
   }
+terraform {
+  backend "s3" {
+    bucket               = ""
+    encrypt              = true
+    key                  = "delius-jitbit.tfstate"
+    region               = "eu-west-2"
+  }
+}
+    
+  }
 }
 
 # Configure the AWS Provider
