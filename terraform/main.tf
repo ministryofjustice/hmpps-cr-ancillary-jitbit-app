@@ -31,27 +31,6 @@ module "container" {
   ]
 }
 
-data "aws_subnet" "private_subnets_a" {
-  vpc_id = "vpc-01d7a2da8f9f1dfec"
-  tags = {
-    "Name" = "hmpps-development-general-private-eu-west-2a"
-  }
-}
-
-data "aws_subnet" "private_subnets_b" {
-  vpc_id = "vpc-01d7a2da8f9f1dfec"
-  tags = {
-    "Name" = "hmpps-development-general-private-eu-west-2b"
-  }
-}
-
-data "aws_subnet" "private_subnets_c" {
-  vpc_id = "vpc-01d7a2da8f9f1dfec"
-  tags = {
-    "Name" = "hmpps-development-general-private-eu-west-2c"
-  }
-}
-
 module "deploy" {
   source                    = "git::https://github.com/ministryofjustice/terraform-ecs//service?ref=2c33fa204d94c615d4d5f92469cd34ae85ad50e3"
   container_definition_json = module.container.json_map_encoded_list
@@ -99,29 +78,4 @@ module "deploy" {
   ignore_changes_task_definition = false
 
   # assign_public_ip = true
-}
-
-terraform {
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "4.56.0"
-    }
-  }
-terraform {
-  backend "s3" {
-    bucket               = ""
-    encrypt              = true
-    key                  = "delius-jitbit.tfstate"
-    region               = "eu-west-2"
-  }
-}
-    
-  }
-}
-
-# Configure the AWS Provider
-provider "aws" {
-  region = "eu-west-2"
 }
