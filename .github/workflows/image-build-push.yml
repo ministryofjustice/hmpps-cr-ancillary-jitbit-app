@@ -47,5 +47,5 @@ jobs:
         run: |
           cd terraform
           terraform init -backend-config=environments/development/backend.hcl
-          terraform apply -auto-approve -var-file=environments/development/terraform.tfvars
+          terraform apply -auto-approve -var-file=environments/development/terraform.tfvars -var="image_tag=${{ steps.BumpVersionAndPushTag.outputs.new_tag }}"
 

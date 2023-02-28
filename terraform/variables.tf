@@ -7,3 +7,9 @@ variable "environment" {
   type        = string
   description = "Environment name"
 }
+
+variable "image_tag" {
+  type = string
+  default = "latest"
+  description = "Version of the application image to deploy"
+}
