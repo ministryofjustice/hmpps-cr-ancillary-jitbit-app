@@ -21,3 +21,7 @@ data "aws_subnet" "private_subnets_c" {
     "Name" = "hmpps-${var.environment}-general-private-${data.aws_region.current.name}c"
   }
 }
+
+data "aws_lb_target_group" "service" {
+  name = var.target_group_name
+}
