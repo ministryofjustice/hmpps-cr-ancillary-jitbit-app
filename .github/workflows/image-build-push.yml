@@ -32,7 +32,7 @@ jobs:
         run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app docker/app  --recursive
 
       - name: Docker build
-        run: docker build --no-cache -t ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ steps.BumpVersionAndPushTag.outputs.new_tag }} ./docker
+        run: docker build --no-cache -t ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9]/-/g') ./docker
 
       - name: Docker login
         if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
@@ -48,4 +48,3 @@ jobs:
           cd terraform
           terraform init -backend-config=environments/development/backend.hcl
           terraform apply -auto-approve -var-file=environments/development/terraform.tfvars -var="image_tag=${{ steps.BumpVersionAndPushTag.outputs.new_tag }}"
-
