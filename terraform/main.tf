@@ -57,14 +57,14 @@ module "deploy" {
   environment = var.environment
   ecs_load_balancers = [
     {
-      target_group_arn = "arn:aws:elasticloadbalancing:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:targetgroup/delius-jitbit-tg-development-new/9dce0b9265ed25e0"
+      target_group_arn = data.aws_lb_target_group.service.arn
       container_name   = local.app_name
       container_port   = 5000
     }
   ]
 
-  security_group_ids    = ["sg-07a92e5d14a64479b"]
-  alb_security_group_id = "sg-0f741aa47c861ed1a"
+  security_group_ids    = [var.service_security_group_id]
+  alb_security_group_id = var.alb_security_group_id
 
   subnet_ids = [
     data.aws_subnet.private_subnets_a.id,
