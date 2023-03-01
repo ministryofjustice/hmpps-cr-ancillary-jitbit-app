@@ -8,11 +8,6 @@ variable "environment" {
   description = "Environment name"
 }
 
-variable "cluster_arn" {
-  type        = string
-  description = "ARN of the ECS cluster to deploy to"
-}
-
 variable "target_group_name" {
   type        = string
   description = "Name of the target group to register the service with"
