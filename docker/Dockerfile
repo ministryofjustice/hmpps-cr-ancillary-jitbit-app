@@ -4,7 +4,7 @@ FROM alpine:3.17
 RUN apk add aspnetcore6-runtime
 
 # Set jitbit app version - this is used to download the correct version of the app files from s3
-ENV JITBIT_APP_VERSION=10_8-c
+ENV JITBIT_APP_VERSION=10_8-a
 
 # Ensure we listen on any URL
 ENV DOTNET_URLS=http://+:5000
