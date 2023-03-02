@@ -21,7 +21,7 @@ module "container" {
     },
     {
       name  = "AttachmentsS3Bucket"
-      value = module.s3_bucket[0].bucket.bucket
+      value = var.s3_bucket_name
     },
     {
       name  = "AttachmentsS3Region"
