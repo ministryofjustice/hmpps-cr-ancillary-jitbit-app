@@ -14,10 +14,20 @@ module "container" {
   container_cpu            = "1024"
   essential                = true
   readonly_root_filesystem = false
-  environment = [{
-    name  = "AppURL"
-    value = "https://${local.app_name}.hmpps-development.modernisation-platform.service.justice.gov.uk/"
-  }]
+  environment = [
+    {
+      name  = "AppURL"
+      value = "https://${local.app_name}.hmpps-development.modernisation-platform.service.justice.gov.uk/"
+    },
+    {
+      name  = "AttachmentsS3Bucket"
+      value = module.s3_bucket[0].bucket.bucket
+    },
+    {
+      name  = "AttachmentsS3Region"
+      value = "eu-west-2"
+    }
+  ]
   port_mappings = [{
     containerPort = 5000
     hostPort      = 5000
@@ -35,6 +45,14 @@ module "container" {
     {
       name      = "ConnectionStrings__DBConnectionString"
       valueFrom = data.aws_secretsmanager_secret.connection_string.arn
+    },
+    {
+      name      = "AttachmentsS3Login"
+      valueFrom = "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:delius-jitbit-s3-user-access-key"
+    },
+    {
+      name      = "AttachmentsS3Password"
+      valueFrom = "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:delius-jitbit-s3-user-secret-key"
     }
   ]
 }
