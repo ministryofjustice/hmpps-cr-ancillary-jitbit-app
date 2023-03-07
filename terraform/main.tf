@@ -70,7 +70,9 @@ module "deploy" {
   task_cpu    = "1024"
   task_memory = "3072"
 
-  task_exec_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.app_name}-ecs-task-execution-role"
+  service_role_arn   = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-service"
+  task_role_arn      = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-task"
+  task_exec_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-service-exec"
 
   environment = var.environment
   ecs_load_balancers = [
@@ -81,8 +83,7 @@ module "deploy" {
     }
   ]
 
-  security_group_ids    = [var.service_security_group_id]
-  alb_security_group_id = var.alb_security_group_id
+  security_group_ids = [var.service_security_group_id]
 
   subnet_ids = [
     data.aws_subnet.private_subnets_a.id,
