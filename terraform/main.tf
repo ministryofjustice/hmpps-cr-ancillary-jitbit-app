@@ -58,7 +58,7 @@ module "container" {
 }
 
 module "deploy" {
-  source                    = "git::https://github.com/ministryofjustice/terraform-ecs//service?ref=2c33fa204d94c615d4d5f92469cd34ae85ad50e3"
+  source                    = "git::https://github.com/ministryofjustice/terraform-ecs//service?ref=3c9a5a0762c7b2dbff6608e606a2784c8a4ef9c4"
   container_definition_json = module.container.json_map_encoded_list
   ecs_cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}-new"
   name                      = local.app_name
