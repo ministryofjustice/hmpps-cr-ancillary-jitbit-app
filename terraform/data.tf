@@ -25,3 +25,15 @@ data "aws_subnet" "private_subnets_c" {
 data "aws_lb_target_group" "service" {
   name = var.target_group_name
 }
+
+data "aws_secretsmanager_secret" "connection_string" {
+  name = "${local.app_name}-app-connection-string"
+}
+
+data "aws_secretsmanager_secret" "s3_user_access_key" {
+  name = "${local.app_name}-s3-user-access-key"
+}
+
+data "aws_secretsmanager_secret" "s3_user_secret_key" {
+  name = "${local.app_name}-s3-user-secret-key"
+}
