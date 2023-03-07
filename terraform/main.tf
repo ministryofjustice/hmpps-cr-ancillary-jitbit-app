@@ -2,10 +2,6 @@ locals {
   app_name = "delius-jitbit"
 }
 
-data "aws_secretsmanager_secret" "connection_string" {
-  name = "${local.app_name}-app-connection-string"
-}
-
 module "container" {
   source                   = "git::https://github.com/cloudposse/terraform-aws-ecs-container-definition.git?ref=tags/0.58.1"
   container_name           = local.app_name
@@ -48,11 +44,11 @@ module "container" {
     },
     {
       name      = "AttachmentsS3Login"
-      valueFrom = "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:delius-jitbit-s3-user-access-key"
+      valueFrom = data.aws_secretsmanager_secret.s3_user_access_key.arn
     },
     {
       name      = "AttachmentsS3Password"
-      valueFrom = "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:delius-jitbit-s3-user-secret-key"
+      valueFrom = data.aws_secretsmanager_secret.s3_user_secret_key.arn
     }
   ]
 }
@@ -73,6 +69,8 @@ module "deploy" {
   service_role_arn   = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-service"
   task_role_arn      = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-task"
   task_exec_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-task-exec"
+
+  task_exec_policy_arns = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/jitbit-secrets-reader"]
 
   environment = var.environment
   ecs_load_balancers = [
