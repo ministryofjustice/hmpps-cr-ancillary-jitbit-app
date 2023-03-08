@@ -30,11 +30,3 @@ variable "service_security_group_id" {
   description = "Security group to associate with the service"
   default     = ""
 }
-
-variable "alb_security_group_id" {
-  type        = string
-  description = <<-EOT
-    Security group of the ALB serving the application.
-    This is used to create a rule to allow your service to accept traffic from the load balancer"
-    EOT
-}

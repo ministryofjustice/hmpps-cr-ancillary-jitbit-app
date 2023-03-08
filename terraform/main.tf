@@ -2,10 +2,6 @@ locals {
   app_name = "delius-jitbit"
 }
 
-data "aws_secretsmanager_secret" "connection_string" {
-  name = "${local.app_name}-app-connection-string"
-}
-
 module "container" {
   source                   = "git::https://github.com/cloudposse/terraform-aws-ecs-container-definition.git?ref=tags/0.58.1"
   container_name           = local.app_name
@@ -48,17 +44,17 @@ module "container" {
     },
     {
       name      = "AttachmentsS3Login"
-      valueFrom = "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:delius-jitbit-s3-user-access-key"
+      valueFrom = data.aws_secretsmanager_secret.s3_user_access_key.arn
     },
     {
       name      = "AttachmentsS3Password"
-      valueFrom = "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:delius-jitbit-s3-user-secret-key"
+      valueFrom = data.aws_secretsmanager_secret.s3_user_secret_key.arn
     }
   ]
 }
 
 module "deploy" {
-  source                    = "git::https://github.com/ministryofjustice/terraform-ecs//service?ref=2c33fa204d94c615d4d5f92469cd34ae85ad50e3"
+  source                    = "git::https://github.com/ministryofjustice/terraform-ecs//service?ref=3c9a5a0762c7b2dbff6608e606a2784c8a4ef9c4"
   container_definition_json = module.container.json_map_encoded_list
   ecs_cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}-new"
   name                      = local.app_name
@@ -70,7 +66,11 @@ module "deploy" {
   task_cpu    = "1024"
   task_memory = "3072"
 
-  task_exec_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.app_name}-ecs-task-execution-role"
+  service_role_arn   = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-service"
+  task_role_arn      = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-task"
+  task_exec_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-task-exec"
+
+  task_exec_policy_arns = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/jitbit-secrets-reader"]
 
   environment = var.environment
   ecs_load_balancers = [
@@ -81,8 +81,7 @@ module "deploy" {
     }
   ]
 
-  security_group_ids    = [var.service_security_group_id]
-  alb_security_group_id = var.alb_security_group_id
+  security_group_ids = [var.service_security_group_id]
 
   subnet_ids = [
     data.aws_subnet.private_subnets_a.id,
