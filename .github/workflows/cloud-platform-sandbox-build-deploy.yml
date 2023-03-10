@@ -49,6 +49,7 @@ jobs:
             if [[ -z "$imageDigest" ]]; then 
               imageExist=false
             fi
+            echo "Image digest: $imageDigest"
             echo imageExist=$imageExist >> $GITHUB_OUTPUT
 
       - name: Build docker file
