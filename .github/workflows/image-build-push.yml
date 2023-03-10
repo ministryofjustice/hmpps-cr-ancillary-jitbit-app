@@ -1,6 +1,10 @@
 name: image-build-push
-on: push
-
+on:
+  workflow_dispatch:
+    paths-ignore:
+      - 'helm/**'
+      - 'kubernetes/**'
+      - cloud-platform-sandbox-cicd.yml'
 jobs:
   image-build:
     runs-on: ubuntu-latest
