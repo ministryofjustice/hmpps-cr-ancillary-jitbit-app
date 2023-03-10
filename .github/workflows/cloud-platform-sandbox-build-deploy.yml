@@ -19,11 +19,11 @@ on:
         required: true
         default: "0.2"
         type: string
-  # push:
-  #   paths:
-  #     - 'helm/**'
-  #     - 'kubernetes/**'
-  #     - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
+  push:
+    paths:
+      - 'helm/**'
+      - 'kubernetes/**'
+      - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
 
 env:
   IMAGE_REPOSITORY_NAME: hmpps-migration/hmpps-community-rehabilitation-ancilliary-jitbit-dev-ecr
