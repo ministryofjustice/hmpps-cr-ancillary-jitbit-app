@@ -12,11 +12,18 @@
 #     - Use version number as app version or pass in app version to deploy
 name: cloud-platform-sandbox-build-deploy
 on:
-  push:
-    paths:
-      - 'helm/**'
-      - 'kubernetes/**'
-      - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      jitbitversion:
+        description: 'Jitbit version, e.g. 10.8'
+        required: true
+        default: "0.2"
+        type: string
+  # push:
+  #   paths:
+  #     - 'helm/**'
+  #     - 'kubernetes/**'
+  #     - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
 
 env:
   IMAGE_REPOSITORY_NAME: hmpps-migration/hmpps-community-rehabilitation-ancilliary-jitbit-dev-ecr
