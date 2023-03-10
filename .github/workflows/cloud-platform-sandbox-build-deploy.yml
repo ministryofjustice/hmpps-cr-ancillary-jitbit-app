@@ -36,13 +36,18 @@ jobs:
       - name: List image versions
         id: list-image-versions
         run: |
+            imageExist=true
             aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin ${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-2.amazonaws.com
             imageDigest=$(aws ecr list-images --repository-name $IMAGE_REPOSITORY_NAME | jq -r '.imageIds[] | select(.imageTag=="${{ env.JITBIT_VERSION }}") | .imageDigest')
-            echo imageDigest=$imageDigest >> $GITHUB_OUTPUT
+            if [[ -z "$digest" ]]; then 
+              imageExist=false
+            fi
+            echo imageExist=$imageExist >> $GITHUB_OUTPUT
 
-      - name: Show digest
+      - name: Build docker file
+        if: steps.list-image-versions.outputs.imageExist==true
         run: |
-            echo "Digest: ${{ steps.list-image-versions.outputs.imageDigest }}"
+            echo "Digest: ${{ steps.list-image-versions.outputs.imageExist }}"
 
       - name: Checkout Jitbit app repo
         uses: actions/checkout@v3
