@@ -40,8 +40,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.CP_ECR_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: List image versions
-        id: list-image-versions
+      - name: Test image version
+        id: test-image-version
         run: |
             imageExist=true
             aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin ${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-2.amazonaws.com
@@ -53,9 +53,9 @@ jobs:
             echo "imageExist=$imageExist" >> $GITHUB_OUTPUT
 
       - name: Build docker file
-        if: steps.list-image-versions.outputs.imageExist == 'false'
+        if: steps.test-image-version.outputs.imageExist == 'false'
         run: |
-            echo "Digest passed in: ${{ steps.list-image-versions.outputs.imageExist }}"
+            echo "Digest passed in: ${{ steps.test-image-version.outputs.imageExist }}"
 
       - name: Checkout Jitbit app repo
         uses: actions/checkout@v3
