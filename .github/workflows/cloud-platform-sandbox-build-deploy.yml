@@ -36,7 +36,7 @@ jobs:
       - name: List image versions
         run: |
             aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin ${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-2.amazonaws.com
-            aws ecr list-images --repository-name $IMAGE_REPOSITORY_NAME | jq -r '.imageIds[] | select(.imageTag=="$JITBIT_VERSION") | .imageDigest'
+            aws ecr list-images --repository-name $IMAGE_REPOSITORY_NAME | jq -r '.imageIds[]'
 
       - name: Checkout Jitbit app repo
         uses: actions/checkout@v3
