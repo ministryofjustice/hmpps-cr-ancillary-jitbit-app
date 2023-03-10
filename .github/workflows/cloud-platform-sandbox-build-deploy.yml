@@ -50,7 +50,7 @@ jobs:
               imageExist=false
             fi
             echo "Image digest: $imageDigest"
-            echo imageExist=$imageExist >> $GITHUB_OUTPUT
+            echo "imageExist=$imageExist" >> $GITHUB_OUTPUT
 
       - name: Build docker file
         if: steps.list-image-versions.outputs.imageExist==false
