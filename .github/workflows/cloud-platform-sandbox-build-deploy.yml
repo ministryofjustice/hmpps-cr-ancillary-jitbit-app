@@ -27,7 +27,7 @@ on:
 
 env:
   IMAGE_REPOSITORY_NAME: hmpps-migration/hmpps-community-rehabilitation-ancilliary-jitbit-dev-ecr
-  JITBIT_VERSION: "10.8"
+  JITBIT_VERSION: "10.2"
 
 jobs:
   build_deploy:
