@@ -16,7 +16,7 @@ on:
     paths:
       - 'helm/**'
       - 'kubernetes/**'
-      - 'cloud-platform-sandbox-build-deploy.yml'
+      - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
 
 jobs:
   build_deploy:
