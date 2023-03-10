@@ -1,9 +1,15 @@
 # Github workflow to perform the following tasks for a chosen version of the jitbit application
 # - If the docker image does not exist in the Cloud Platform ECR repo
+#     - Query ECR for versions
+
 #   - Build docker file for Jitbit version
+#     - Pass version into docker file
+#     - Depends on access to bucket and contents of files
 #   - Tag
 #   - Push to ECR
+#     - Using version number
 # - Deploy helm chart to Cloud Platform namespace
+#     - Use version number as app version or pass in app version to deploy
 name: cloud-platform-sandbox-build-deploy
 on:
   push:
@@ -13,15 +19,19 @@ on:
       - 'cloud-platform-sandbox-build-deploy.yml'
 
 jobs:
-  image-build:
+  build_deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
         with:
-          aws-access-key-id: ${{ secrets.CICD_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.CICD_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ secrets.CP_ECR_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CP_ECR_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: List image versions
+        run: |
+            aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin ${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-2.amazonaws.com
 
       - name: Checkout Jitbit app repo
         uses: actions/checkout@v3
