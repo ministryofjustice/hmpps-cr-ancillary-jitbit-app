@@ -41,7 +41,7 @@ jobs:
         run: |
             docker build --no-cache \
               -t ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:0.1 \
-              build-arg JITBIT_APP_VERSION \
+              --build-arg JITBIT_APP_VERSION \
               ./docker
 
       # - name: Docker login
