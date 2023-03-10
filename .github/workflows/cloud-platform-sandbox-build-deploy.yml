@@ -17,7 +17,7 @@ on:
       jitbitversion:
         description: 'Jitbit version, e.g. 10.8'
         required: true
-        default: "0.2"
+        default: "10.8"
         type: string
   push:
     paths:
@@ -27,7 +27,7 @@ on:
 
 env:
   IMAGE_REPOSITORY_NAME: hmpps-migration/hmpps-community-rehabilitation-ancilliary-jitbit-dev-ecr
-  JITBIT_VERSION: "0.2"
+  JITBIT_VERSION: "10.8"
 
 jobs:
   build_deploy:
