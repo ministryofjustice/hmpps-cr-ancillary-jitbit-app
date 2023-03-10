@@ -53,9 +53,9 @@ jobs:
             echo "imageExist=$imageExist" >> $GITHUB_OUTPUT
 
       - name: Build docker file
-        if: steps.list-image-versions.outputs.imageExist==false
+        # if: steps.list-image-versions.outputs.imageExist==false
         run: |
-            echo "Digest: ${{ steps.list-image-versions.outputs.imageExist }}"
+            echo "Digest passed in: ${{ steps.list-image-versions.outputs.imageExist }}"
 
       - name: Checkout Jitbit app repo
         uses: actions/checkout@v3
