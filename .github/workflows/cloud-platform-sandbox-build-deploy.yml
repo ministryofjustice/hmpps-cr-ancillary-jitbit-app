@@ -53,7 +53,7 @@ jobs:
             echo "imageExist=$imageExist" >> $GITHUB_OUTPUT
 
       - name: Build docker file
-        if: steps.list-image-versions.outputs.imageExist=="false"
+        if: steps.list-image-versions.outputs.imageExist=='false'
         run: |
             echo "Digest passed in: ${{ steps.list-image-versions.outputs.imageExist }}"
 
