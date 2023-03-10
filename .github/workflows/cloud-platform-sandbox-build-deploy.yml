@@ -34,9 +34,14 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: List image versions
+        id: list-image-versions
         run: |
             aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin ${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-2.amazonaws.com
-            aws ecr list-images --repository-name $IMAGE_REPOSITORY_NAME | jq -r '.imageIds[] | select(.imageTag=="${{ env.JITBIT_VERSION }}") | .imageDigest'
+            $imageDigest=$(aws ecr list-images --repository-name $IMAGE_REPOSITORY_NAME | jq -r '.imageIds[] | select(.imageTag=="${{ env.JITBIT_VERSION }}") | .imageDigest')
+
+      - name: Show digest
+        run: |
+            echo "Digest: ${{ steps.list-image-versions.outputs.imageDigest }}"
 
       - name: Checkout Jitbit app repo
         uses: actions/checkout@v3
