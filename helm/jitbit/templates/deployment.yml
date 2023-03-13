@@ -50,17 +50,17 @@ spec:
           - name: AttachmentsS3Bucket
             valueFrom:
               secretKeyRef:
-                name: s3-bucket-output
+                name: s3-bucket-jitbit-app-files-output 
                 key: bucket_name
           - name: AttachmentsS3Login
             valueFrom:
               secretKeyRef:
-                name: s3-bucket-output
+                name: s3-bucket-jitbit-app-files-output 
                 key: access_key_id
           - name: AttachmentsS3Password
             valueFrom:
               secretKeyRef:
-                name: s3-bucket-output
+                name: s3-bucket-jitbit-app-files-output 
                 key: secret_access_key
           - name: AttachmentsS3Region
             value: eu-west-2
