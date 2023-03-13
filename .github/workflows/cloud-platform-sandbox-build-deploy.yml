@@ -73,11 +73,11 @@ jobs:
 
       - name: Pull down S3 app files
         if: steps.test-image-version.outputs.imageExist == 'false'
-        run: aws s3 cp --dryrun s3://${{ secrets.CP_S3_ARTEFACTS_BUCKET }}/app/HelpDesk_$JITBIT_APP_VERSION docker/app  --recursive
+        run: aws s3 cp --dryrun s3://${{ secrets.CP_S3_ARTEFACTS_BUCKET }}/app/HelpDesk_$JITBIT_APP_VERSION docker/app/HelpDesk_$JITBIT_APP_VERSION  --recursive
 
       - name: Docker build
         if: steps.test-image-version.outputs.imageExist == 'false'
-        run: docker build --no-cache -t "${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_REPOSITORY_NAME:$IMAGE_REPOSITORY_NAME" --build-arg JITBIT_APP_VERSION ./docker
+        run: docker build --no-cache -t "${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_REPOSITORY_NAME:$JITBIT_APP_VERSION" --build-arg JITBIT_APP_VERSION ./docker
 
       # - name: Docker push
       #   if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
