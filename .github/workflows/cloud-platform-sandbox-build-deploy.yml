@@ -73,7 +73,7 @@ jobs:
 
       - name: Pull down S3 app files
         if: steps.test-image-version.outputs.imageExist == 'false'
-        run: aws s3 cp --dry-run s3://${{ secrets.CP_S3_ARTEFACTS_BUCKET }}/app/HelpDesk_$JITBIT_APP_VERSION docker/app  --recursive
+        run: aws s3 cp --dryrun s3://${{ secrets.CP_S3_ARTEFACTS_BUCKET }}/app/HelpDesk_$JITBIT_APP_VERSION docker/app  --recursive
 
       - name: Docker build
         if: steps.test-image-version.outputs.imageExist == 'false'
