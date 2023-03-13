@@ -14,7 +14,7 @@ name: cloud-platform-sandbox-build-deploy
 on:
   workflow_dispatch:
     inputs:
-      jitbitversion:
+      jitbitappversion:
         description: 'Jitbit version, e.g. 10.8'
         required: true
         default: "10.8"
@@ -27,7 +27,7 @@ on:
 
 env:
   IMAGE_REPOSITORY_NAME: hmpps-migration/hmpps-community-rehabilitation-ancilliary-jitbit-dev-ecr
-  JITBIT_VERSION: "10.8"
+  JITBIT_APP_VERSION: "10.8"
 
 jobs:
   build_deploy:
@@ -48,7 +48,7 @@ jobs:
         id: test-image-version
         run: |
             imageExist=true
-            imageDigest=$(aws ecr list-images --repository-name $IMAGE_REPOSITORY_NAME | jq -r '.imageIds[] | select(.imageTag=="${{ env.JITBIT_VERSION }}") | .imageDigest')
+            imageDigest=$(aws ecr list-images --repository-name $IMAGE_REPOSITORY_NAME | jq -r '.imageIds[] | select(.imageTag=="${{ env.JITBIT_APP_VERSION }}") | .imageDigest')
             if [[ -z "$imageDigest" ]]; then 
               imageExist=false
             fi
@@ -70,7 +70,7 @@ jobs:
 
       - name: Docker build
         if: steps.test-image-version.outputs.imageExist == 'false'
-        run: docker build --no-cache -t "${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_REPOSITORY_NAME:$JITBIT_VERSION" --build-arg JITBIT_APP_VERSION ./docker
+        run: docker build --no-cache -t "${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_REPOSITORY_NAME:$JITBIT_APP_VERSION" --build-arg JITBIT_APP_VERSION ./docker
 
       # - name: Docker push
       #   if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
