@@ -68,9 +68,9 @@ jobs:
       #   if: steps.test-image-version.outputs.imageExist == 'false'
       #   run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app docker/app  --recursive
 
-      # - name: Docker build
-      #   if: steps.test-image-version.outputs.imageExist == 'false'
-      #   run: docker build --no-cache -t ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g') ./docker
+      - name: Docker build
+        if: steps.test-image-version.outputs.imageExist == 'false'
+        run: docker build --no-cache -t "${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ IMAGE_REPOSITORY_NAME }}:${{ JITBIT_VERSION }}" ./docker
 
       # - name: Docker push
       #   if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
