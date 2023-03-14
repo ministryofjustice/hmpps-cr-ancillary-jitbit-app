@@ -1,0 +1,86 @@
+# Default values for jitbit.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: 754256621582.dkr.ecr.eu-west-2.amazonaws.com/hmpps-cr-ancillary-jitbit-app-cloud-platform/hmpps-community-rehabilitation-ancilliary-jitbit-dev-ecr
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "10_14"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  # runAsUser: 1000
+  # readOnlyRootFilesystem: true
+
+service:
+  type: ClusterIP
+  port: 5000
+
+ingress:
+  enabled: true
+  className: "default"
+  annotations:
+    nginx.ingress.kubernetes.io/whitelist-source-range: 18.130.108.149/32,35.176.14.16/32,35.177.83.160/32,35.177.125.252/32,35.177.137.160/32,51.149.249.0/29,51.149.249.32/29,51.149.250.0/24,51.149.251.0/24,52.56.62.0/24,62.25.106.209/32,62.25.109.197/32,81.134.202.29/32,194.33.192.0/25,194.33.193.0/25,194.33.196.0/25,194.33.197.0/25,194.33.248.0/29,194.33.249.0/29,195.59.75.0/24,195.92.38.16/28,195.92.40.49/32,212.137.36.230/32,213.121.161.112/28,20.49.246.205/32,20.108.103.72/32,51.143.235.180/32,20.49.162.18/32
+    external-dns.alpha.kubernetes.io/set-identifier: jitbit-hmpps-community-rehabilitation-ancilliary-jitbit-dev-green
+    external-dns.alpha.kubernetes.io/aws-weight: "100"
+  hosts:
+    - host: jitbit-dev.apps.live.cloud-platform.service.justice.gov.uk
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+      - jitbit-dev.apps.live.cloud-platform.service.justice.gov.uk
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  limits:
+    cpu: "1"
+    memory: 1000Mi
+  requests:
+    cpu: 10m
+    memory: 100Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Controls deployment of the testing pod
+testing:
+  enabled: false
+
+database:
+  # This will be overridden on the command line when deployed
+  dbConnectionString: override_me
+
+  

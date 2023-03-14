@@ -1,0 +1,101 @@
+# Github workflow to perform the following tasks for a chosen version of the jitbit application
+# - If the docker image does not exist in the Cloud Platform ECR repo
+#     - Query ECR for versions
+#   - Build docker file for Jitbit version
+#     - Pass version into docker file
+#     - Depends on access to bucket and contents of files
+#   - Tag
+#   - Push to ECR
+#     - Using version number
+# - Deploy helm chart to Cloud Platform namespace
+#     - Pass in jitbit version number
+name: cloud-platform-sandbox-build-deploy
+on:
+  workflow_dispatch:
+    inputs:
+      jitbit_app_version:
+        description: 'Jitbit version, with an underscore to separate major and minor version, e.g. 10_14'
+        required: true
+        default: "10_14"
+        type: string
+  #  For testing purposes only:
+  # push:
+  #   paths:
+  #     - 'helm/**'
+  #     - 'kubernetes/**'
+  #     - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
+
+env:
+  IMAGE_REPOSITORY_NAME: hmpps-cr-ancillary-jitbit-app-cloud-platform/hmpps-community-rehabilitation-ancilliary-jitbit-dev-ecr
+  KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
+  JITBIT_APP_VERSION: ${{ inputs.jitbit_app_version }}
+  # For testing purposes only:
+  # JITBIT_APP_VERSION: "10_14"
+
+jobs:
+  build_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure aws credentials for ECR image test
+        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
+        with:
+          aws-access-key-id: ${{ secrets.CP_ECR_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CP_ECR_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Docker login
+        run: aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin ${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-2.amazonaws.com
+
+      - name: Test image version
+        id: test-image-version
+        run: |
+            imageExist=true
+            imageDigest=$(aws ecr list-images --repository-name $IMAGE_REPOSITORY_NAME | jq -r '.imageIds[] | select(.imageTag=="${{ env.JITBIT_APP_VERSION }}") | .imageDigest')
+            if [[ -z "$imageDigest" ]]; then 
+              imageExist=false
+            fi
+            echo "Image digest: $imageDigest"
+            echo "imageExist=$imageExist" >> $GITHUB_OUTPUT
+
+      - name: Checkout Jitbit app repo
+        if: steps.test-image-version.outputs.imageExist == 'false'
+        uses: actions/checkout@v3
+
+      - name: Configure aws credentials for S3 download
+        if: steps.test-image-version.outputs.imageExist == 'false'
+        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
+        with:
+          aws-access-key-id: ${{ secrets.CP_S3_ARTEFACTS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CP_S3_ARTEFACTS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Pull down S3 app files
+        if: steps.test-image-version.outputs.imageExist == 'false'
+        run: aws s3 cp s3://${{ secrets.CP_S3_ARTEFACTS_BUCKET }}/app/HelpDesk_$JITBIT_APP_VERSION docker/app/HelpDesk_$JITBIT_APP_VERSION  --recursive
+
+      - name: Docker build
+        if: steps.test-image-version.outputs.imageExist == 'false'
+        run: docker build --no-cache -t "${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_REPOSITORY_NAME:$JITBIT_APP_VERSION" --build-arg JITBIT_APP_VERSION=$JITBIT_APP_VERSION ./docker
+
+      - name: Docker push
+        if: steps.test-image-version.outputs.imageExist == 'false'
+
+        run: docker push ${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_REPOSITORY_NAME:$JITBIT_APP_VERSION
+      - name: Authenticate to k8s
+        if: steps.test-image-version.outputs.imageExist == 'false'
+        run: |
+            echo "${{ secrets.KUBE_CERT }}" > ca.crt
+            kubectl config set-cluster ${{ secrets.KUBE_CLUSTER }} --certificate-authority=./ca.crt --server=https://${{ secrets.KUBE_CLUSTER }}
+            kubectl config set-credentials github-actions-serviceaccount --token=${{ secrets.KUBE_TOKEN }}
+            kubectl config set-context ${{ secrets.KUBE_CLUSTER }} --cluster=${{ secrets.KUBE_CLUSTER }} --user=github-actions-serviceaccount --namespace=$KUBE_NAMESPACE
+            kubectl config use-context ${{ secrets.KUBE_CLUSTER }}
+
+      - name: Deploy to Cloud platform sandbox environment
+        if: steps.test-image-version.outputs.imageExist == 'false'
+        run: |
+            helm upgrade jitbit helm/jitbit --install -n $KUBE_NAMESPACE \
+              --set database.dbConnectionString="${{ secrets.CP_RDS_JITBIT_DATABASE_CONNECTION_STRING }}" \
+              --set image.tag=$JITBIT_APP_VERSION
+              # For testing purposees: --dry-run
+
+        
