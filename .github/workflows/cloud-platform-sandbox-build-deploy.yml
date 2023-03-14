@@ -81,10 +81,10 @@ jobs:
         if: steps.test-image-version.outputs.imageExist == 'false'
         run: |
             echo -n ${{ secrets.KUBE_CERT }} | base64 -d > ./ca.crt
-            kubectl config set-cluster ${{ secrets.KUBE_CLUSTER }} --certificate-authority=./ca.crt --server=https://${{ secrets.KUBE_CLUSTER }}
-            kubectl config set-credentials github-actions-serviceaccount --token=${{ secrets.KUBE_TOKEN }}
-            kubectl config set-context ${{ secrets.KUBE_CLUSTER }} --cluster=${{ secrets.KUBE_CLUSTER }} --user=github-actions-serviceaccount --namespace=${{ secrets.KUBE_NAMESPACE }}
-            kubectl config use-context ${{ secrets.KUBE_CLUSTER }}
+            # kubectl config set-cluster ${{ secrets.KUBE_CLUSTER }} --certificate-authority=./ca.crt --server=https://${{ secrets.KUBE_CLUSTER }}
+            # kubectl config set-credentials github-actions-serviceaccount --token=${{ secrets.KUBE_TOKEN }}
+            # kubectl config set-context ${{ secrets.KUBE_CLUSTER }} --cluster=${{ secrets.KUBE_CLUSTER }} --user=github-actions-serviceaccount --namespace=${{ secrets.KUBE_NAMESPACE }}
+            # kubectl config use-context ${{ secrets.KUBE_CLUSTER }}
 
       - name: Deploy to Cloud platform sandbox environment
         if: steps.test-image-version.outputs.imageExist == 'false'
