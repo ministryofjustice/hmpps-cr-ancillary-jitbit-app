@@ -73,14 +73,14 @@ jobs:
         if: steps.test-image-version.outputs.imageExist == 'false'
         run: aws s3 cp s3://${{ secrets.CP_S3_ARTEFACTS_BUCKET }}/app/HelpDesk_$JITBIT_APP_VERSION docker/app/HelpDesk_$JITBIT_APP_VERSION  --recursive
 
-      - name: Docker build
+      - name: Docker build and tag
         if: steps.test-image-version.outputs.imageExist == 'false'
         run: docker build --no-cache -t "${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_REPOSITORY_NAME:$JITBIT_APP_VERSION" --build-arg JITBIT_APP_VERSION=$JITBIT_APP_VERSION ./docker
 
       - name: Docker push
         if: steps.test-image-version.outputs.imageExist == 'false'
-
         run: docker push ${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_REPOSITORY_NAME:$JITBIT_APP_VERSION
+
       - name: Authenticate to k8s
         if: steps.test-image-version.outputs.imageExist == 'false'
         run: |
@@ -91,7 +91,6 @@ jobs:
             kubectl config use-context ${{ secrets.KUBE_CLUSTER }}
 
       - name: Deploy to Cloud platform sandbox environment
-        if: steps.test-image-version.outputs.imageExist == 'false'
         run: |
             helm upgrade jitbit helm/jitbit --install -n $KUBE_NAMESPACE \
               --set database.dbConnectionString="${{ secrets.CP_RDS_JITBIT_DATABASE_CONNECTION_STRING }}" \
