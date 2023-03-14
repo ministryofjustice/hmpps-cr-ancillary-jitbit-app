@@ -48,7 +48,7 @@ jobs:
             imageExist=true
             imageDigest=$(aws ecr list-images --repository-name $IMAGE_REPOSITORY_NAME | jq -r '.imageIds[] | select(.imageTag=="${{ env.JITBIT_APP_VERSION }}") | .imageDigest')
             if [[ -z "$imageDigest" ]]; then 
-              imageExist=false
+              imageExist=true
             fi
             echo "Image digest: $imageDigest"
             echo "imageExist=$imageExist" >> $GITHUB_OUTPUT
@@ -58,6 +58,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Configure aws credentials for S3 download
+        if: steps.test-image-version.outputs.imageExist == 'false'
         uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
         with:
           aws-access-key-id: ${{ secrets.CP_S3_ARTEFACTS_ACCESS_KEY_ID }}
