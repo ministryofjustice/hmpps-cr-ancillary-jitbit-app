@@ -27,9 +27,10 @@ on:
 
 env:
   IMAGE_REPOSITORY_NAME: hmpps-cr-ancillary-jitbit-app-cloud-platform/hmpps-community-rehabilitation-ancilliary-jitbit-dev-ecr
-  # For testing purposes only:
-  jitbit_app_version: "10_14"
   KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
+  # JITBIT_APP_VERSION: ${{ inputs.jitbit_app_version }}
+  # For testing purposes only:
+  JITBIT_APP_VERSION: "10_14"
 
 jobs:
   build_deploy:
@@ -49,7 +50,7 @@ jobs:
         id: test-image-version
         run: |
             imageExist=false
-            imageDigest=$(aws ecr list-images --repository-name $IMAGE_REPOSITORY_NAME | jq -r '.imageIds[] | select(.imageTag=="${{ env.jitbit_app_version }}") | .imageDigest')
+            imageDigest=$(aws ecr list-images --repository-name $IMAGE_REPOSITORY_NAME | jq -r '.imageIds[] | select(.imageTag=="${{ env.JITBIT_APP_VERSION }}") | .imageDigest')
             if [[ -z "$imageDigest" ]]; then 
               imageExist=false
             fi
@@ -70,31 +71,31 @@ jobs:
 
       - name: Pull down S3 app files
         if: steps.test-image-version.outputs.imageExist == 'false'
-        run: aws s3 cp s3://${{ secrets.CP_S3_ARTEFACTS_BUCKET }}/app/HelpDesk_$jitbit_app_version docker/app/HelpDesk_$jitbit_app_version  --recursive
+        run: aws s3 cp s3://${{ secrets.CP_S3_ARTEFACTS_BUCKET }}/app/HelpDesk_$JITBIT_APP_VERSION docker/app/HelpDesk_$JITBIT_APP_VERSION  --recursive
 
       - name: Docker build
         if: steps.test-image-version.outputs.imageExist == 'false'
-        run: docker build --no-cache -t "${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_REPOSITORY_NAME:$jitbit_app_version" --build-arg JITBIT_APP_VERSION=$jitbit_app_version ./docker
+        run: docker build --no-cache -t "${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_REPOSITORY_NAME:$JITBIT_APP_VERSION" --build-arg JITBIT_APP_VERSION=$JITBIT_APP_VERSION ./docker
 
-      # - name: Docker push
-      #   if: steps.test-image-version.outputs.imageExist == 'false'
-      #   run: docker push ${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_REPOSITORY_NAME:$jitbit_app_version
+      - name: Docker push
+        if: steps.test-image-version.outputs.imageExist == 'false'
 
-      # - name: Authenticate to k8s
-      #   if: steps.test-image-version.outputs.imageExist == 'false'
-      #   run: |
-      #       echo "${{ secrets.KUBE_CERT }}" > ca.crt
-      #       kubectl config set-cluster ${{ secrets.KUBE_CLUSTER }} --certificate-authority=./ca.crt --server=https://${{ secrets.KUBE_CLUSTER }}
-      #       kubectl config set-credentials github-actions-serviceaccount --token=${{ secrets.KUBE_TOKEN }}
-      #       kubectl config set-context ${{ secrets.KUBE_CLUSTER }} --cluster=${{ secrets.KUBE_CLUSTER }} --user=github-actions-serviceaccount --namespace=$KUBE_NAMESPACE
-      #       kubectl config use-context ${{ secrets.KUBE_CLUSTER }}
+        run: docker push ${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_REPOSITORY_NAME:$JITBIT_APP_VERSION
+      - name: Authenticate to k8s
+        if: steps.test-image-version.outputs.imageExist == 'false'
+        run: |
+            echo "${{ secrets.KUBE_CERT }}" > ca.crt
+            kubectl config set-cluster ${{ secrets.KUBE_CLUSTER }} --certificate-authority=./ca.crt --server=https://${{ secrets.KUBE_CLUSTER }}
+            kubectl config set-credentials github-actions-serviceaccount --token=${{ secrets.KUBE_TOKEN }}
+            kubectl config set-context ${{ secrets.KUBE_CLUSTER }} --cluster=${{ secrets.KUBE_CLUSTER }} --user=github-actions-serviceaccount --namespace=$KUBE_NAMESPACE
+            kubectl config use-context ${{ secrets.KUBE_CLUSTER }}
 
-      # - name: Deploy to Cloud platform sandbox environment
-      #   if: steps.test-image-version.outputs.imageExist == 'false'
-      #   run: |
-      #       helm upgrade jitbit helm/jitbit --install -n $KUBE_NAMESPACE \
-      #         --set database.dbConnectionString="${{ secrets.CP_RDS_JITBIT_DATABASE_CONNECTION_STRING }}" \
-      #         --set image.tag=$jitbit_app_version \
-      #         --dry-run
+      - name: Deploy to Cloud platform sandbox environment
+        if: steps.test-image-version.outputs.imageExist == 'false'
+        run: |
+            helm upgrade jitbit helm/jitbit --install -n $KUBE_NAMESPACE \
+              --set database.dbConnectionString="${{ secrets.CP_RDS_JITBIT_DATABASE_CONNECTION_STRING }}" \
+              --set image.tag=$JITBIT_APP_VERSION
+              # For testing purposees: --dry-run
 
         
