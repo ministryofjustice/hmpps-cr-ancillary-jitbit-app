@@ -74,7 +74,7 @@ jobs:
 
       - name: Docker build
         if: steps.test-image-version.outputs.imageExist == 'false'
-        run: docker build --no-cache -t "${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_REPOSITORY_NAME:$jitbit_app_version" --build-arg jitbit_app_version ./docker
+        run: docker build --no-cache -t "${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_REPOSITORY_NAME:$jitbit_app_version" --build-arg JITBIT_APP_VERSION=$jitbit_app_version ./docker
 
       # - name: Docker push
       #   if: steps.test-image-version.outputs.imageExist == 'false'
