@@ -1,12 +1,14 @@
 name: image-build-push
 on:
-  workflow_dispatch:
+  push:
     paths-ignore:
       - 'helm/**'
       - 'kubernetes/**'
-      - cloud-platform-sandbox-cicd.yml'
+      - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
+
 env:
   JITBIT_VERSION: "10_8-b"
+
 jobs:
   image-build:
     runs-on: ubuntu-latest
