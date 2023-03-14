@@ -1,7 +1,6 @@
 # Github workflow to perform the following tasks for a chosen version of the jitbit application
 # - If the docker image does not exist in the Cloud Platform ECR repo
 #     - Query ECR for versions
-
 #   - Build docker file for Jitbit version
 #     - Pass version into docker file
 #     - Depends on access to bucket and contents of files
@@ -9,7 +8,7 @@
 #   - Push to ECR
 #     - Using version number
 # - Deploy helm chart to Cloud Platform namespace
-#     - Use version number as app version or pass in app version to deploy
+#     - Pass in jitbit version number
 name: cloud-platform-sandbox-build-deploy
 on:
   workflow_dispatch:
@@ -54,11 +53,6 @@ jobs:
             echo "Image digest: $imageDigest"
             echo "imageExist=$imageExist" >> $GITHUB_OUTPUT
 
-      # - name: Build docker file
-      #   if: steps.test-image-version.outputs.imageExist == 'false'
-      #   run: |
-      #       echo "Digest passed in: ${{ steps.test-image-version.outputs.imageExist }}"
-
       - name: Checkout Jitbit app repo
         if: steps.test-image-version.outputs.imageExist == 'false'
         uses: actions/checkout@v3
@@ -82,3 +76,21 @@ jobs:
         if: steps.test-image-version.outputs.imageExist == 'false'
         run: docker push ${{ secrets.CP_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$IMAGE_REPOSITORY_NAME:$JITBIT_APP_VERSION
 
+      - name: Authenticate to k8s
+        if: steps.test-image-version.outputs.imageExist == 'false'
+        run: |
+            echo -n ${{ secrets.K8S_CLUSTER_CERT }} | base64 -d > ./ca.crt
+            kubectl config set-cluster ${{ secrets.K8S_CLUSTER_NAME }} --certificate-authority=./ca.crt --server=https://${{ secrets.K8S_CLUSTER_NAME }}
+            kubectl config set-credentials circleci --token=${{ secrets.K8S_TOKEN }}
+            kubectl config set-context ${{ secrets.K8S_CLUSTER_NAME }} --cluster=${{ secrets.K8S_CLUSTER_NAME }} --user=github-actions-serviceaccount --namespace=${{ secrets.K8S_NAMESPACE }}
+            kubectl config use-context ${{ secrets.K8S_CLUSTER_NAME }}
+
+      - name: Deploy to Cloud platform sandbox environment
+        if: steps.test-image-version.outputs.imageExist == 'false'
+        run: |
+            helm upgrade jitbit jitbit --install -n $nsjdev \
+              --set database.dbConnectionString="${{ secrets.CP_RDS_JITBIT_DATABASE_CONNECTION_STRING }}" \
+              --set image.tag=$JITBIT_APP_VERSION
+              --dry-run
+
+        

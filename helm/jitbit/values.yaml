@@ -5,10 +5,10 @@
 replicaCount: 1
 
 image:
-  repository: 754256621582.dkr.ecr.eu-west-2.amazonaws.com/hmpps-migration/hmpps-community-rehabilitation-ancilliary-jitbit-dev-ecr
+  repository: 754256621582.dkr.ecr.eu-west-2.amazonaws.com/hmpps-cr-ancillary-jitbit-app-cloud-platform/hmpps-community-rehabilitation-ancilliary-jitbit-dev-ecr
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "10_14"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -62,12 +62,6 @@ resources:
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
   limits:
     cpu: "1"
     memory: 1000Mi
@@ -87,6 +81,6 @@ testing:
 
 database:
   # This will be overridden on the command line when deployed
-  dbConnectionString: set_me
+  dbConnectionString: override_me
 
   
