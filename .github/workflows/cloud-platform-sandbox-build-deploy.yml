@@ -92,7 +92,7 @@ jobs:
         run: |
             helm upgrade jitbit helm/jitbit --install -n $KUBE_NAMESPACE \
               --set database.dbConnectionString="${{ secrets.CP_RDS_JITBIT_DATABASE_CONNECTION_STRING }}" \
-              --set image.tag=$JITBIT_APP_VERSION
+              --set image.tag=$JITBIT_APP_VERSION \
               --dry-run
 
         
