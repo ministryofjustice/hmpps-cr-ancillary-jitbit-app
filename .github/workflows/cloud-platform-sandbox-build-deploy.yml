@@ -19,18 +19,18 @@ on:
         default: "10_14"
         type: string
   #  For testing purposes only:
-  push:
-    paths:
-      - 'helm/**'
-      - 'kubernetes/**'
-      - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
+  # push:
+  #   paths:
+  #     - 'helm/**'
+  #     - 'kubernetes/**'
+  #     - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
 
 env:
   IMAGE_REPOSITORY_NAME: hmpps-cr-ancillary-jitbit-app-cloud-platform/hmpps-community-rehabilitation-ancilliary-jitbit-dev-ecr
   KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
-  # JITBIT_APP_VERSION: ${{ inputs.jitbit_app_version }}
+  JITBIT_APP_VERSION: ${{ inputs.jitbit_app_version }}
   # For testing purposes only:
-  JITBIT_APP_VERSION: "10_14"
+  # JITBIT_APP_VERSION: "10_14"
 
 jobs:
   build_deploy:
@@ -49,7 +49,7 @@ jobs:
       - name: Test image version
         id: test-image-version
         run: |
-            imageExist=false
+            imageExist=true
             imageDigest=$(aws ecr list-images --repository-name $IMAGE_REPOSITORY_NAME | jq -r '.imageIds[] | select(.imageTag=="${{ env.JITBIT_APP_VERSION }}") | .imageDigest')
             if [[ -z "$imageDigest" ]]; then 
               imageExist=false
