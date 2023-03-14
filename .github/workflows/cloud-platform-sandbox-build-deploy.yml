@@ -80,11 +80,11 @@ jobs:
       - name: Authenticate to k8s
         if: steps.test-image-version.outputs.imageExist == 'false'
         run: |
-            echo -n ${{ secrets.K8S_CLUSTER_CERT }} | base64 -d > ./ca.crt
-            kubectl config set-cluster ${{ secrets.K8S_CLUSTER_NAME }} --certificate-authority=./ca.crt --server=https://${{ secrets.K8S_CLUSTER_NAME }}
-            kubectl config set-credentials circleci --token=${{ secrets.K8S_TOKEN }}
-            kubectl config set-context ${{ secrets.K8S_CLUSTER_NAME }} --cluster=${{ secrets.K8S_CLUSTER_NAME }} --user=github-actions-serviceaccount --namespace=${{ secrets.K8S_NAMESPACE }}
-            kubectl config use-context ${{ secrets.K8S_CLUSTER_NAME }}
+            echo -n ${{ secrets.KUBE_CERT }} | base64 -d > ./ca.crt
+            kubectl config set-cluster ${{ secrets.KUBE_CLUSTER }} --certificate-authority=./ca.crt --server=https://${{ secrets.KUBE_CLUSTER }}
+            kubectl config set-credentials github-actions-serviceaccount --token=${{ secrets.KUBE_TOKEN }}
+            kubectl config set-context ${{ secrets.KUBE_CLUSTER }} --cluster=${{ secrets.KUBE_CLUSTER }} --user=github-actions-serviceaccount --namespace=${{ secrets.KUBE_NAMESPACE }}
+            kubectl config use-context ${{ secrets.KUBE_CLUSTER }}
 
       - name: Deploy to Cloud platform sandbox environment
         if: steps.test-image-version.outputs.imageExist == 'false'
