@@ -27,6 +27,7 @@ on:
 env:
   IMAGE_REPOSITORY_NAME: hmpps-cr-ancillary-jitbit-app-cloud-platform/hmpps-community-rehabilitation-ancilliary-jitbit-dev-ecr
   JITBIT_APP_VERSION: "10_14"
+  KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
 
 jobs:
   build_deploy:
@@ -80,16 +81,16 @@ jobs:
       - name: Authenticate to k8s
         if: steps.test-image-version.outputs.imageExist == 'false'
         run: |
-            echo -n "${{ secrets.KUBE_CERT }}" | base64 -d > ./ca.crt
-            # kubectl config set-cluster ${{ secrets.KUBE_CLUSTER }} --certificate-authority=./ca.crt --server=https://${{ secrets.KUBE_CLUSTER }}
-            # kubectl config set-credentials github-actions-serviceaccount --token=${{ secrets.KUBE_TOKEN }}
-            # kubectl config set-context ${{ secrets.KUBE_CLUSTER }} --cluster=${{ secrets.KUBE_CLUSTER }} --user=github-actions-serviceaccount --namespace=${{ secrets.KUBE_NAMESPACE }}
-            # kubectl config use-context ${{ secrets.KUBE_CLUSTER }}
+            echo "${{ secrets.KUBE_CERT }}" > ca.crt
+            kubectl config set-cluster ${KUBE_CLUSTER} --certificate-authority=./ca.crt --server=https://${KUBE_CLUSTER}
+            kubectl config set-credentials deploy-user --token=${{ secrets.KUBE_TOKEN }}
+            kubectl config set-context ${KUBE_CLUSTER} --cluster=${KUBE_CLUSTER} --user=deploy-user --namespace=$KUBE_NAMESPACE
+            kubectl config use-context ${KUBE_CLUSTER}
 
       - name: Deploy to Cloud platform sandbox environment
         if: steps.test-image-version.outputs.imageExist == 'false'
         run: |
-            helm upgrade jitbit jitbit --install -n $nsjdev \
+            helm upgrade jitbit jitbit --install -n $KUBE_NAMESPACE \
               --set database.dbConnectionString="${{ secrets.CP_RDS_JITBIT_DATABASE_CONNECTION_STRING }}" \
               --set image.tag=$JITBIT_APP_VERSION
               --dry-run
