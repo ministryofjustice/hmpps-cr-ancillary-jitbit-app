@@ -45,10 +45,10 @@ jobs:
       - name: Test image version
         id: test-image-version
         run: |
-            imageExist=true
+            imageExist=false
             imageDigest=$(aws ecr list-images --repository-name $IMAGE_REPOSITORY_NAME | jq -r '.imageIds[] | select(.imageTag=="${{ env.JITBIT_APP_VERSION }}") | .imageDigest')
             if [[ -z "$imageDigest" ]]; then 
-              imageExist=true
+              imageExist=false
             fi
             echo "Image digest: $imageDigest"
             echo "imageExist=$imageExist" >> $GITHUB_OUTPUT
