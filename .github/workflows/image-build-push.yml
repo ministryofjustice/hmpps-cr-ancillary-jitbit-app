@@ -56,6 +56,7 @@ jobs:
 
       - name: Deploy to ECS
         id: DeployToECS
+        continue-on-error: true
         if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
         run: |
           cd terraform
