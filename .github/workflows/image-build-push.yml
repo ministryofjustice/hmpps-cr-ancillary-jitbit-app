@@ -55,8 +55,37 @@ jobs:
         run: docker push ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')
 
       - name: Deploy to ECS
+        id: DeployToECS
         if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
         run: |
           cd terraform
           terraform init -backend-config=environments/development/backend.hcl
           terraform apply -auto-approve -var-file=environments/development/terraform.tfvars -var="image_tag=$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')"
+          if [$? != 0]; then
+            echo "TF Apply to deploy to ECS succeeded"
+            echo "CLUSTER_ARN=$(terraform output -raw ecs_cluster_arn)" >> $GITHUB_OUTPUT
+            echo "SERVICE_ARN=$(terraform output -raw ecs_service_arn)" >> $GITHUB_OUTPUT
+            echo "Checking the service is stable next"
+            exit 0
+          else
+            echo "TF Apply to deploy to ECS failed"
+            curl -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":github: Jitbit Deployment"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":" :fail: *Deployment Failed* :white_check_mark: \n The TF Apply step failed."},"accessory":{"type":"button","text":{"type":"plain_text","text":"View Job","emoji":true}}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
+            exit 1
+          fi
+      - name: Ensure service stable
+        if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
+        run: |
+            if [timeout 300 aws ecs wait services-stable --cluster ${{ steps.DeployToECS.outputs.CLUSTER_ARN }} --services ${{ steps.DeployToECS.outputs.SERVICE_ARN }}]; then
+              echo "Service is stable"
+              curl -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":github: Jitbit Deployment"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":" :white_check_mark: *Deployment Succeeded* \n TF Apply succeeded and the ECS Service is stable."},"accessory":{"type":"button","text":{"type":"plain_text","text":"View Job","emoji":true}}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
+              exit 0
+            else
+              echo "Service is not stable"
+              curl -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":github: Jitbit Deployment"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":" :fail: *Deployment Failed* \n TF Apply Succeeded _HOWEVER_ the Service was not stable within 300 seconds."},"accessory":{"type":"button","text":{"type":"plain_text","text":"View Job","emoji":true}}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
+              exit 1
+            fi
+            
+
+          
+        
+          
