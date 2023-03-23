@@ -69,7 +69,7 @@ jobs:
             exit 0
           else
             echo "TF Apply to deploy to ECS failed"
-            curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":github: Jitbit Deployment"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":" :fail: *Deployment Failed* \n The TF Apply step failed."},"accessory":{"type":"button","text":{"type":"plain_text","text":"View Job","emoji":true}}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
+            curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":github: Jitbit Deployment"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":" :fail: *Deployment Failed* \n The TF Apply step failed."},"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
             exit 1
           fi
       - name: Ensure service stable
@@ -77,10 +77,12 @@ jobs:
         run: |
           if aws ecs wait services-stable --cluster ${{ steps.DeployToECS.outputs.CLUSTER_ARN }} --services ${{ steps.DeployToECS.outputs.SERVICE_ARN}}; then
             echo "Service is stable"
-            curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":github: Jitbit Deployment"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":" :white_check_mark: *Deployment Succeeded* \n TF Apply succeeded and the ECS Service is stable."},"accessory":{"type":"button","text":{"type":"plain_text","text":"View Job","emoji":true}}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
+            curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":github: Jitbit Deployment"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":" :white_check_mark: *Deployment Succeeded* \n TF Apply succeeded and the ECS Service is stable."},"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
             exit 0
           else
             echo "Service is not stable"
-            curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":github: Jitbit Deployment"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":" :fail: *Deployment Failed* \n TF Apply Succeeded _HOWEVER_ the Service was not stable within 300 seconds."},"accessory":{"type":"button","text":{"type":"plain_text","text":"View Job","emoji":true}}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
+            curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":github: Jitbit Deployment"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":" :fail: *Deployment Failed* \n TF Apply Succeeded _HOWEVER_ the Service was not stable within 300 seconds."},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
             exit 1
           fi
+
+          
