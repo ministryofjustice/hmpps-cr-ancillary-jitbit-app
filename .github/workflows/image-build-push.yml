@@ -85,5 +85,3 @@ jobs:
               curl -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":github: Jitbit Deployment"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":" :fail: *Deployment Failed* \n TF Apply Succeeded _HOWEVER_ the Service was not stable within 300 seconds."},"accessory":{"type":"button","text":{"type":"plain_text","text":"View Job","emoji":true}}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
               exit 1
             fi
-            
-            
