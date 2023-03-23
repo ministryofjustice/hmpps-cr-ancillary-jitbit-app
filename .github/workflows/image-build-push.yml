@@ -56,13 +56,12 @@ jobs:
 
       - name: Deploy to ECS
         id: DeployToECS
-        continue-on-error: true
+        # continue-on-error: true
         if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
         run: |
           cd terraform
           terraform init -backend-config=environments/development/backend.hcl
-          terraform apply -auto-approve -var-file=environments/development/terraform.tfvars -var="image_tag=$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')"
-          if [$? != 0]; then
+          if [terraform apply -auto-approve -var-file=environments/development/terraform.tfvars -var="image_tag=$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')"]; then
             echo "TF Apply to deploy to ECS succeeded"
             echo "CLUSTER_ARN=$(terraform output -raw ecs_cluster_arn)" >> $GITHUB_OUTPUT
             echo "SERVICE_ARN=$(terraform output -raw ecs_service_arn)" >> $GITHUB_OUTPUT
