@@ -54,7 +54,7 @@ module "container" {
 }
 
 module "deploy" {
-  source                    = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=8c220d48805db2b6ca2622e44836a17424f7c970"
+  source                    = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=v1.0.1"
   container_definition_json = module.container.json_map_encoded_list
   ecs_cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}"
   name                      = local.app_name
@@ -90,4 +90,6 @@ module "deploy" {
   ]
 
   ignore_changes_task_definition = false
+  redeploy_on_apply              = false
+  force_new_deployment           = false
 }

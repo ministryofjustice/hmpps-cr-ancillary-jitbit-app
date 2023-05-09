@@ -71,6 +71,9 @@ jobs:
             curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":fail: *Deployment Failed*"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"TF Apply Failed."},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
             exit 1
           fi
+      - name: Trigger new ECS service deployment
+        if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
+        run: aws ecs update-service --cluster ${{ steps.DeployToECS.outputs.CLUSTER_ARN }} --service ${{ steps.DeployToECS.outputs.SERVICE_ARN }} --force-new-deployment
       - name: Ensure service stable
         if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
         run: |
