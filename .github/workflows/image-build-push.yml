@@ -7,7 +7,7 @@ on:
       - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
 
 env:
-  JITBIT_APP_VERSION: "10_8-b"
+  JITBIT_APP_VERSION: "10.14"
 
 jobs:
   image-build:
