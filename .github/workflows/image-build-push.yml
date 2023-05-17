@@ -7,7 +7,7 @@ on:
       - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
 
 env:
-  JITBIT_APP_VERSION: "10_8-b"
+  JITBIT_APP_VERSION: "10.14"
 
 jobs:
   image-build:
@@ -37,13 +37,13 @@ jobs:
           DRY_RUN: ${{ github.ref != 'refs/heads/main' }} # Tag repo on main, not otherwise. Note we can still use the proposed dry-run tag to tag ECR images
 
       - name: Pull down S3 app files
-        run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app docker/app  --recursive
+        run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app/HelpDesk_${{env.JITBIT_APP_VERSION}} docker/app  --recursive
 
       - name: Docker build
         run: |
             docker build --no-cache \
             -t ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g') \
-            --build-arg JITBIT_APP_VERSION \
+            --build-arg JITBIT_APP_VERSION=app \
             ./docker
 
       - name: Docker login
