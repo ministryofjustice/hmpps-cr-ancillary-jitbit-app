@@ -47,7 +47,7 @@ jobs:
             ./docker
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@v0.11.2
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'delius-jitbit-ecr-repo:${{ github.sha }}'
           format: 'sarif'
