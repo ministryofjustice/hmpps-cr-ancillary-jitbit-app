@@ -39,12 +39,30 @@ jobs:
       - name: Pull down S3 app files
         run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app/HelpDesk_${{env.JITBIT_APP_VERSION}} docker/app  --recursive
 
-      - name: Docker build
+      - name: Build an image from Dockerfile
         run: |
-            docker build --no-cache \
-            -t ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g') \
+          docker build --no-cache \
+            -t delius-jitbit-ecr-repo:${{ github.sha }} \
             --build-arg JITBIT_APP_VERSION=app \
             ./docker
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@v0.11.2
+        with:
+          image-ref: 'delius-jitbit-ecr-repo:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Docker retag scanned image
+        run: |
+          docker tag \
+            delius-jitbit-ecr-repo:${{ github.sha }} \
+            ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')
 
       - name: Docker login
         if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
