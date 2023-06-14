@@ -6,11 +6,17 @@ on:
       - 'kubernetes/**'
       - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
 
+permissions:
+  contents: read
+
 env:
   JITBIT_APP_VERSION: "10.14"
 
 jobs:
   image-build:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     runs-on: ubuntu-latest
     steps:
       - name: Configure aws credentials
@@ -51,6 +57,7 @@ jobs:
         with:
           image-ref: 'delius-jitbit-ecr-repo:${{ github.sha }}'
           format: 'sarif'
+          exit-code: '1'
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy scan results to GitHub Security tab
