@@ -1,117 +1,117 @@
-name: image-build-push
-on:
-  push:
-    paths-ignore:
-      - 'helm/**'
-      - 'kubernetes/**'
-      - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
+# name: image-build-push
+# on:
+#   push:
+#     paths-ignore:
+#       - 'helm/**'
+#       - 'kubernetes/**'
+#       - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
 
-permissions:
-  contents: read
+# permissions:
+#   contents: read
 
-env:
-  JITBIT_APP_VERSION: "10.14"
+# env:
+#   JITBIT_APP_VERSION: "10.14"
 
-jobs:
-  image-build:
-    permissions:
-      contents: write # for bump tag version to work when running on main
-      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-    runs-on: ubuntu-latest
-    steps:
-      - name: Configure aws credentials
-        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
-        with:
-          aws-access-key-id: ${{ secrets.CICD_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.CICD_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+# jobs:
+#   image-build:
+#     permissions:
+#       contents: write # for bump tag version to work when running on main
+#       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Configure aws credentials
+#         uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
+#         with:
+#           aws-access-key-id: ${{ secrets.CICD_ACCESS_KEY }}
+#           aws-secret-access-key: ${{ secrets.CICD_SECRET_ACCESS_KEY }}
+#           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Checkout Jitbit app repo
-        uses: actions/checkout@v3
+#       - name: Checkout Jitbit app repo
+#         uses: actions/checkout@v3
 
-      - name: Pull down S3 app files
-        run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app/HelpDesk_${{env.JITBIT_APP_VERSION}} docker/app  --recursive
+#       - name: Pull down S3 app files
+#         run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app/HelpDesk_${{env.JITBIT_APP_VERSION}} docker/app  --recursive
 
-      - name: Build an image from Dockerfile
-        run: |
-          docker build --no-cache \
-            -t delius-jitbit-ecr-repo:${{ github.sha }} \
-            --build-arg JITBIT_APP_VERSION=app \
-            ./docker
+#       - name: Build an image from Dockerfile
+#         run: |
+#           docker build --no-cache \
+#             -t delius-jitbit-ecr-repo:${{ github.sha }} \
+#             --build-arg JITBIT_APP_VERSION=app \
+#             ./docker
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
-        with:
-          format: 'sarif'
-          severity: 'MEDIUM,HIGH,CRITICAL'
-          image-ref: 'delius-jitbit-ecr-repo:${{ github.sha }}'
-          exit-code: '1'
-          output: 'trivy-results.sarif'
+#       - name: Run Trivy vulnerability scanner
+#         uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
+#         with:
+#           format: 'sarif'
+#           severity: 'MEDIUM,HIGH,CRITICAL'
+#           image-ref: 'delius-jitbit-ecr-repo:${{ github.sha }}'
+#           exit-code: '1'
+#           output: 'trivy-results.sarif'
 
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
-        if: failure()
-        with:
-          sarif_file: 'trivy-results.sarif'
+#       - name: Upload Trivy scan results to GitHub Security tab
+#         uses: github/codeql-action/upload-sarif@v2
+#         if: failure()
+#         with:
+#           sarif_file: 'trivy-results.sarif'
       
-      - name: Bump version and push tag
-        id: BumpVersionAndPushTag
-        if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
-        uses: anothrNick/github-tag-action@1.61.0 # Don't use @master unless you're happy to test the latest version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: false
-          DEFAULT_BUMP: minor # Making this default visible
-          INITIAL_VERSION: 0.0.0 # Making this default visible
-          TAG_CONTEXT: repo # Making this default visible
-          PRERELEASE: true
-          PRERELEASE_SUFFIX: ${{ github.ref_name }} # Branch name
-          DRY_RUN: ${{ github.ref != 'refs/heads/main' }} # Tag repo on main, not otherwise. Note we can still use the proposed dry-run tag to tag ECR images
+#       - name: Bump version and push tag
+#         id: BumpVersionAndPushTag
+#         if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
+#         uses: anothrNick/github-tag-action@1.61.0 # Don't use @master unless you're happy to test the latest version
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#           WITH_V: false
+#           DEFAULT_BUMP: minor # Making this default visible
+#           INITIAL_VERSION: 0.0.0 # Making this default visible
+#           TAG_CONTEXT: repo # Making this default visible
+#           PRERELEASE: true
+#           PRERELEASE_SUFFIX: ${{ github.ref_name }} # Branch name
+#           DRY_RUN: ${{ github.ref != 'refs/heads/main' }} # Tag repo on main, not otherwise. Note we can still use the proposed dry-run tag to tag ECR images
 
-      - name: Docker retag scanned image
-        if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
-        run: |
-          docker tag \
-            delius-jitbit-ecr-repo:${{ github.sha }} \
-            ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')
+#       - name: Docker retag scanned image
+#         if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
+#         run: |
+#           docker tag \
+#             delius-jitbit-ecr-repo:${{ github.sha }} \
+#             ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')
 
-      - name: Docker login
-        if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
-        run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+#       - name: Docker login
+#         if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
+#         run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
-      - name: Docker push
-        if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
-        run: docker push ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')
+#       - name: Docker push
+#         if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
+#         run: docker push ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')
 
-      - name: Deploy to ECS
-        id: DeployToECS
-        if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
-        run: |
-          cd terraform
-          terraform init -backend-config=environments/development/backend.hcl
-          if terraform apply -auto-approve -var-file=environments/development/terraform.tfvars -var="image_tag=$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')"; then
-            echo "TF Apply to deploy to ECS succeeded"
-            echo "CLUSTER_ARN=$(terraform output -raw ecs_cluster_arn)" >> $GITHUB_OUTPUT
-            echo "SERVICE_ARN=$(terraform output -raw ecs_service_arn)" >> $GITHUB_OUTPUT
-            echo "Checking the service is stable next"
-            exit 0
-          else
-            echo "TF Apply to deploy to ECS failed"
-            curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":fail: *Deployment Failed*"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"TF Apply Failed."},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
-            exit 1
-          fi
-      - name: Trigger new ECS service deployment
-        if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
-        run: aws ecs update-service --cluster ${{ steps.DeployToECS.outputs.CLUSTER_ARN }} --service ${{ steps.DeployToECS.outputs.SERVICE_ARN }} --force-new-deployment
-      - name: Ensure service stable
-        if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
-        run: |
-          if aws ecs wait services-stable --cluster ${{ steps.DeployToECS.outputs.CLUSTER_ARN }} --services ${{ steps.DeployToECS.outputs.SERVICE_ARN}}; then
-            echo "Service is stable"
-            curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":white_check_mark: Deployment Succeeded"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"TF Apply Succeeded and the Service is stable."},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
-            exit 0
-          else
-            echo "Service is not stable"
-            curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":fail: *Deployment Failed*"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"TF Apply Succeeded _HOWEVER_ the Service was not stable within 300 seconds."},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
-            exit 1
-          fi
+#       - name: Deploy to ECS
+#         id: DeployToECS
+#         if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
+#         run: |
+#           cd terraform
+#           terraform init -backend-config=environments/development/backend.hcl
+#           if terraform apply -auto-approve -var-file=environments/development/terraform.tfvars -var="image_tag=$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')"; then
+#             echo "TF Apply to deploy to ECS succeeded"
+#             echo "CLUSTER_ARN=$(terraform output -raw ecs_cluster_arn)" >> $GITHUB_OUTPUT
+#             echo "SERVICE_ARN=$(terraform output -raw ecs_service_arn)" >> $GITHUB_OUTPUT
+#             echo "Checking the service is stable next"
+#             exit 0
+#           else
+#             echo "TF Apply to deploy to ECS failed"
+#             curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":fail: *Deployment Failed*"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"TF Apply Failed."},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
+#             exit 1
+#           fi
+#       - name: Trigger new ECS service deployment
+#         if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
+#         run: aws ecs update-service --cluster ${{ steps.DeployToECS.outputs.CLUSTER_ARN }} --service ${{ steps.DeployToECS.outputs.SERVICE_ARN }} --force-new-deployment
+#       - name: Ensure service stable
+#         if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
+#         run: |
+#           if aws ecs wait services-stable --cluster ${{ steps.DeployToECS.outputs.CLUSTER_ARN }} --services ${{ steps.DeployToECS.outputs.SERVICE_ARN}}; then
+#             echo "Service is stable"
+#             curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":white_check_mark: Deployment Succeeded"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"TF Apply Succeeded and the Service is stable."},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
+#             exit 0
+#           else
+#             echo "Service is not stable"
+#             curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":fail: *Deployment Failed*"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"TF Apply Succeeded _HOWEVER_ the Service was not stable within 300 seconds."},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
+#             exit 1
+#           fi
