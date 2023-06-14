@@ -52,6 +52,9 @@ jobs:
             docker/app
           key: "${{ runner.os }}-${{ env.JITBIT_APP_VERSION }}"
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: Build image and export
         uses: docker/build-push-action@v4
         with:
