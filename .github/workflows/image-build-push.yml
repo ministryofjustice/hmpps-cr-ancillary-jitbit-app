@@ -15,7 +15,7 @@ env:
 jobs:
   image-build:
     permissions:
-      contents: read # for actions/checkout to fetch code
+      contents: write # for bump tag version to work when running on main
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     runs-on: ubuntu-latest
     steps:
@@ -29,6 +29,31 @@ jobs:
       - name: Checkout Jitbit app repo
         uses: actions/checkout@v3
 
+      - name: Pull down S3 app files
+        run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app/HelpDesk_${{env.JITBIT_APP_VERSION}} docker/app  --recursive
+
+      - name: Build an image from Dockerfile
+        run: |
+          docker build --no-cache \
+            -t delius-jitbit-ecr-repo:${{ github.sha }} \
+            --build-arg JITBIT_APP_VERSION=app \
+            ./docker
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
+        with:
+          format: 'sarif'
+          severity: 'MEDIUM,HIGH,CRITICAL'
+          image-ref: 'delius-jitbit-ecr-repo:${{ github.sha }}'
+          exit-code: '1'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+      
       - name: Bump version and push tag
         id: BumpVersionAndPushTag
         uses: anothrNick/github-tag-action@1.61.0 # Don't use @master unless you're happy to test the latest version
@@ -42,15 +67,11 @@ jobs:
           PRERELEASE_SUFFIX: ${{ github.ref_name }} # Branch name
           DRY_RUN: ${{ github.ref != 'refs/heads/main' }} # Tag repo on main, not otherwise. Note we can still use the proposed dry-run tag to tag ECR images
 
-      - name: Pull down S3 app files
-        run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app/HelpDesk_${{env.JITBIT_APP_VERSION}} docker/app  --recursive
-
-      - name: Build an image from Dockerfile
+      - name: Docker retag scanned image
         run: |
-          docker build --no-cache \
-            -t delius-jitbit-ecr-repo:${{ github.sha }} \
-            --build-arg JITBIT_APP_VERSION=app \
-            ./docker
+          docker tag \
+            delius-jitbit-ecr-repo:${{ github.sha }} \
+            ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
