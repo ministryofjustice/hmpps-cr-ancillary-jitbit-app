@@ -50,12 +50,13 @@ jobs:
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
-        if: always()
+        if: failure()
         with:
           sarif_file: 'trivy-results.sarif'
       
       - name: Bump version and push tag
         id: BumpVersionAndPushTag
+        if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
         uses: anothrNick/github-tag-action@1.61.0 # Don't use @master unless you're happy to test the latest version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -68,27 +69,7 @@ jobs:
           DRY_RUN: ${{ github.ref != 'refs/heads/main' }} # Tag repo on main, not otherwise. Note we can still use the proposed dry-run tag to tag ECR images
 
       - name: Docker retag scanned image
-        run: |
-          docker tag \
-            delius-jitbit-ecr-repo:${{ github.sha }} \
-            ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
-        with:
-          format: 'sarif'
-          severity: 'MEDIUM,HIGH,CRITICAL'
-          image-ref: 'delius-jitbit-ecr-repo:${{ github.sha }}'
-          exit-code: '1'
-          output: 'trivy-results.sarif'
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
-
-      - name: Docker retag scanned image
+        if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
         run: |
           docker tag \
             delius-jitbit-ecr-repo:${{ github.sha }} \
