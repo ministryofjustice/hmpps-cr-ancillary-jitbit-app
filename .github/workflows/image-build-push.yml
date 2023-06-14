@@ -56,6 +56,7 @@ jobs:
       
       - name: Bump version and push tag
         id: BumpVersionAndPushTag
+        if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
         uses: anothrNick/github-tag-action@1.61.0 # Don't use @master unless you're happy to test the latest version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -68,6 +69,7 @@ jobs:
           DRY_RUN: ${{ github.ref != 'refs/heads/main' }} # Tag repo on main, not otherwise. Note we can still use the proposed dry-run tag to tag ECR images
 
       - name: Docker retag scanned image
+        if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
         run: |
           docker tag \
             delius-jitbit-ecr-repo:${{ github.sha }} \
