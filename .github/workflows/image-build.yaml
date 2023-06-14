@@ -1,8 +1,10 @@
 name: image-build
 on:
   push:
-    paths:
-      - 'docker/Dockerfile'
+    paths-ignore:
+      - 'helm/**'
+      - 'kubernetes/**'
+      - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
 
 env:
   JITBIT_APP_VERSION: "10.14"
