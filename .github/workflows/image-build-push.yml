@@ -6,16 +6,13 @@ on:
       - 'kubernetes/**'
       - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
 
-permissions:
-  contents: read
-
 env:
   JITBIT_APP_VERSION: "10.14"
 
 jobs:
   image-build:
     permissions:
-      contents: read # for actions/checkout to fetch code
+      contents: write # for bump tag version to work when running on main
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     runs-on: ubuntu-latest
     steps:
@@ -28,19 +25,6 @@ jobs:
 
       - name: Checkout Jitbit app repo
         uses: actions/checkout@v3
-
-      - name: Bump version and push tag
-        id: BumpVersionAndPushTag
-        uses: anothrNick/github-tag-action@1.61.0 # Don't use @master unless you're happy to test the latest version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: false
-          DEFAULT_BUMP: minor # Making this default visible
-          INITIAL_VERSION: 0.0.0 # Making this default visible
-          TAG_CONTEXT: repo # Making this default visible
-          PRERELEASE: true
-          PRERELEASE_SUFFIX: ${{ github.ref_name }} # Branch name
-          DRY_RUN: ${{ github.ref != 'refs/heads/main' }} # Tag repo on main, not otherwise. Note we can still use the proposed dry-run tag to tag ECR images
 
       - name: Pull down S3 app files
         run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app/HelpDesk_${{env.JITBIT_APP_VERSION}} docker/app  --recursive
@@ -66,6 +50,19 @@ jobs:
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
+      
+      - name: Bump version and push tag
+        id: BumpVersionAndPushTag
+        uses: anothrNick/github-tag-action@1.61.0 # Don't use @master unless you're happy to test the latest version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: false
+          DEFAULT_BUMP: minor # Making this default visible
+          INITIAL_VERSION: 0.0.0 # Making this default visible
+          TAG_CONTEXT: repo # Making this default visible
+          PRERELEASE: true
+          PRERELEASE_SUFFIX: ${{ github.ref_name }} # Branch name
+          DRY_RUN: ${{ github.ref != 'refs/heads/main' }} # Tag repo on main, not otherwise. Note we can still use the proposed dry-run tag to tag ECR images
 
       - name: Docker retag scanned image
         run: |
