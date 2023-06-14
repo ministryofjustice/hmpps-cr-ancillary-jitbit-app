@@ -55,8 +55,10 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          severity: 'CRITICAL,HIGH'
           image-ref: 'delius-jitbit-ecr-repo:${{ github.sha }}'
-          format: 'sarif'
           exit-code: '1'
           output: 'trivy-results.sarif'
 
