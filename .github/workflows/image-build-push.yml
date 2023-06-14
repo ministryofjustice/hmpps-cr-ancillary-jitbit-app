@@ -6,11 +6,17 @@ on:
       - 'kubernetes/**'
       - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
 
+permissions:
+  contents: read
+
 env:
   JITBIT_APP_VERSION: "10.14"
 
 jobs:
   image-build:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     runs-on: ubuntu-latest
     steps:
       - name: Configure aws credentials
@@ -39,12 +45,33 @@ jobs:
       - name: Pull down S3 app files
         run: aws s3 cp s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app/HelpDesk_${{env.JITBIT_APP_VERSION}} docker/app  --recursive
 
-      - name: Docker build
+      - name: Build an image from Dockerfile
         run: |
-            docker build --no-cache \
-            -t ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g') \
+          docker build --no-cache \
+            -t delius-jitbit-ecr-repo:${{ github.sha }} \
             --build-arg JITBIT_APP_VERSION=app \
             ./docker
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
+        with:
+          format: 'sarif'
+          severity: 'MEDIUM,HIGH,CRITICAL'
+          image-ref: 'delius-jitbit-ecr-repo:${{ github.sha }}'
+          exit-code: '1'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Docker retag scanned image
+        run: |
+          docker tag \
+            delius-jitbit-ecr-repo:${{ github.sha }} \
+            ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.BumpVersionAndPushTag.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')
 
       - name: Docker login
         if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'

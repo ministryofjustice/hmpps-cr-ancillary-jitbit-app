@@ -1,5 +1,7 @@
-FROM alpine:3.17
+FROM alpine:3.18
 
+# Fix CVE-2023-2650, CVE-2023-1255
+RUN apk upgrade libssl3 libcrypto3
 
 RUN apk add aspnetcore6-runtime
 
