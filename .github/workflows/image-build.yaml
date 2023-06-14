@@ -154,6 +154,12 @@ jobs:
     runs-on: ubuntu-latest
     if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
