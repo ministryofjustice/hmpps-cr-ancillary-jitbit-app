@@ -1,0 +1,198 @@
+name: image-build
+on:
+  push:
+    paths-ignore:
+      - 'helm/**'
+      - 'kubernetes/**'
+      - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
+
+env:
+  JITBIT_APP_VERSION: "10.14"
+
+jobs:
+  build-image:
+    name: Build Image
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.CICD_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.CICD_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Cache app files
+        id: app-files
+        uses: actions/cache@v3
+        with:
+          path: docker/app
+          key: "${{ runner.os }}-${{ env.JITBIT_APP_VERSION }}"
+
+      - name: Pull down S3 app files if not cached
+        if: steps.app-files.outputs.cache-hit != 'true'
+        run: |
+          aws s3 cp \
+            s3://${{ secrets.MP_ARTEFACT_BUCKET }}/delius-jitbit/app/HelpDesk_${{env.JITBIT_APP_VERSION}} \
+            docker/app  \
+            --recursive
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build image and export
+        uses: docker/build-push-action@v4
+        with:
+          context: ./docker
+          tags: delius-jitbit-ecr-repo:${{ github.sha }}
+          outputs: type=docker,dest=/tmp/jitbit.tar
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: jitbit-image
+          path: /tmp/jitbit.tar
+          retention-days: 1
+
+  scan-image:
+    name: Scan Image
+    needs: build-image
+    permissions:
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: jitbit-image
+          path: /tmp
+
+      - name: Load image
+        run: |
+          docker load --input /tmp/jitbit.tar
+
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
+        with:
+          format: 'sarif'
+          severity: 'MEDIUM,HIGH,CRITICAL'
+          image-ref: 'delius-jitbit-ecr-repo:${{ github.sha }}'
+          exit-code: '1'
+          output: 'trivy-results.sarif'
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: failure() # If Trivy found vulnerabilities
+        with:
+          sarif_file: 'trivy-results.sarif'
+  
+  publish-image:
+    name: Publish image
+    needs: [build-image, scan-image]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      new_tag: ${{ steps.bump-version.outputs.new_tag }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Bump version and push tag
+        id: bump-version
+        uses: anothrNick/github-tag-action@1.67.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: false
+          DEFAULT_BUMP: minor # Making this default visible
+          INITIAL_VERSION: 10.14.0 # Making this default visible
+          TAG_CONTEXT: repo # Making this default visible
+          PRERELEASE: ${{ github.ref != 'refs/heads/main' }}
+          PRERELEASE_SUFFIX: ${{ github.ref_name }} # Branch name
+      
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: jitbit-image
+          path: /tmp
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.CICD_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.CICD_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Load and retag image for publish
+        run: |
+          docker load --input /tmp/jitbit.tar
+          docker tag \
+            delius-jitbit-ecr-repo:${{ github.sha }} \
+            ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.bump-version.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')
+
+      - name: Login to ECR
+        run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+
+      - name: Publish image
+        run: docker push ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.bump-version.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')
+
+  deploy-image:
+    name: Deploy image
+    needs: [build-image, scan-image, publish-image]
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.CICD_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.CICD_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to ECS
+        id: deploy
+        env:
+          IMAGE_TAG: ${{ needs.publish-image.outputs.new_tag }}
+        run: |
+          set -e
+          cd terraform
+          terraform init -backend-config=environments/development/backend.hcl
+          terraform apply -auto-approve -var-file=environments/development/terraform.tfvars -var="image_tag=$(echo ${{ env.IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')"
+          echo "CLUSTER_ARN=$(terraform output -raw ecs_cluster_arn)" >> $GITHUB_OUTPUT
+          echo "SERVICE_ARN=$(terraform output -raw ecs_service_arn)" >> $GITHUB_OUTPUT
+
+      - name: Trigger new ECS service deployment
+        run: |
+          aws ecs update-service --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --service ${{ steps.deploy.outputs.SERVICE_ARN }} --force-new-deployment
+
+      - name: Ensure service stable
+        run: |
+          aws ecs wait services-stable --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --services ${{ steps.deploy.outputs.SERVICE_ARN}}
+      
+      - name: Alert Slack failure
+        if: "${{ failure() && github.ref == 'refs/heads/main' }}"
+        run: |
+          curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":fail: *Deployment Failed*"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"Deployment failed"},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Alert Slack Success
+        if: "${{ success() && github.ref == 'refs/heads/main' }}"
+        run: |
+          curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":white_check_mark: Deployment Succeeded"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"TF Apply Succeeded and the Service is stable."},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
