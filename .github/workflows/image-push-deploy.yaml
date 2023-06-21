@@ -40,7 +40,7 @@ jobs:
         if: steps.app-files.outputs.cache-hit != 'true'
         run: |
           aws s3 cp \
-            s3://${{ secrets.AMI_BUCKET_NAME }}/delius-jitbit/app/HelpDesk_${{env.JITBIT_APP_VERSION}} \
+            s3://${{ secrets.MP_ARTEFACT_BUCKET }}/delius-jitbit/app/HelpDesk_${{env.JITBIT_APP_VERSION}} \
             docker/app  \
             --recursive
 
