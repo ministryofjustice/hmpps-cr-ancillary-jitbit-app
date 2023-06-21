@@ -161,3 +161,4 @@ jobs:
     with:
       environment: ${{ matrix.environment }}
       image_tag: ${{ needs.publish-image.outputs.new_tag }}
+    secrets: inherit
