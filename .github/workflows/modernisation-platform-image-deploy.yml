@@ -1,0 +1,57 @@
+name: Modernisation Platform Image Deploy
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      image_tag:
+        required: true
+        type: string
+jobs:
+  deploy:
+    name: Deploy - ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.CICD_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.CICD_SECRET_ACCESS_KEY }}
+          aws-region: "eu-west-2"
+
+      - name: Deploy to ECS
+        id: deploy
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          set -e
+          cd terraform
+          terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl
+          terraform apply -auto-approve -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=$(echo ${{ env.IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')"
+          echo "CLUSTER_ARN=$(terraform output -raw ecs_cluster_arn)" >> $GITHUB_OUTPUT
+          echo "SERVICE_ARN=$(terraform output -raw ecs_service_arn)" >> $GITHUB_OUTPUT
+
+      - name: Trigger new ECS service deployment
+        run: |
+          aws ecs update-service --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --service ${{ steps.deploy.outputs.SERVICE_ARN }} --force-new-deployment
+
+      - name: Ensure service stable
+        run: |
+          aws ecs wait services-stable --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --services ${{ steps.deploy.outputs.SERVICE_ARN}}
+      
+      - name: Alert Slack failure
+        if: "${{ failure() && github.ref == 'refs/heads/main' }}"
+        run: |
+          curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":fail: *Deployment Failed*"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"Deployment to the ${{ inputs.environment }} account failed"},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Alert Slack Success
+        if: "${{ success() && github.ref == 'refs/heads/main' }}"
+        run: |
+          curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":white_check_mark: Deployment Succeeded"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"TF Apply Succeeded and the Service is stable in the ${{ inputs.environment }} account."},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
