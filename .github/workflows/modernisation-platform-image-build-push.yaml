@@ -1,6 +1,18 @@
 name: Modernisation Platform Image Build and Push
+
 on:
   push:
+    branches:
+      - main
+    paths-ignore:
+      - 'helm/**'
+      - 'kubernetes/**'
+      - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
+
+  pull_request:
+    branches:
+      - main
+    types: [opened, edited, reopened, synchronize]
     paths-ignore:
       - 'helm/**'
       - 'kubernetes/**'
@@ -12,7 +24,6 @@ env:
 jobs:
   build-image:
     name: Build Image
-    environment: development
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -67,7 +78,6 @@ jobs:
 
   scan-image:
     name: Scan Image
-    environment: development
     needs: build-image
     permissions:
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
@@ -99,7 +109,6 @@ jobs:
   
   publish-image:
     name: Publish image
-    environment: development
     needs: [build-image, scan-image]
     permissions:
       contents: write
@@ -151,13 +160,19 @@ jobs:
       - name: Publish image
         run: docker push ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.bump-version.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')
 
-  deploy-image:
-    needs: [build-image, scan-image, publish-image]
-    strategy:
-      matrix:
-        environment: ["development", "test"]
+  deploy-image-development:
+    uses: ./.github/workflows/modernisation-platform-image-deploy.yml
+    needs: [build-image, scan-image, "publish-image"]
+    with:
+      environment: development
+      image_tag: ${{ needs.publish-image.outputs.new_tag }}
+    secrets: inherit
+
+  deploy-image-test:
+    if: github.ref == 'refs/heads/main'
+    needs: [build-image, scan-image, "publish-image"]
     uses: ./.github/workflows/modernisation-platform-image-deploy.yml
     with:
-      environment: ${{ matrix.environment }}
+      environment: test
       image_tag: ${{ needs.publish-image.outputs.new_tag }}
     secrets: inherit
