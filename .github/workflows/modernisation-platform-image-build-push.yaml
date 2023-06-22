@@ -153,7 +153,6 @@ jobs:
 
   deploy-image:
     needs: [build-image, scan-image, publish-image]
-    if: contains(github.event.head_commit.message, 'ecr_push') || github.ref == 'refs/heads/main'
     strategy:
       matrix:
         environment: ["development", "test"]
