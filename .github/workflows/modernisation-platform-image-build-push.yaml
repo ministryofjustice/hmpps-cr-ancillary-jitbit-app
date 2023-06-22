@@ -1,4 +1,4 @@
-name: image-build
+name: Modernisation Platform Image Build and Push
 on:
   push:
     paths-ignore:
