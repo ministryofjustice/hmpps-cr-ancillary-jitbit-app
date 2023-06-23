@@ -24,6 +24,7 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      serviceAccountName: jitbit-irsa
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
