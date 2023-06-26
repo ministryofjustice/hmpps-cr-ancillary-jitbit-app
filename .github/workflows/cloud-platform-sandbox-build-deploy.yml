@@ -64,7 +64,7 @@ jobs:
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ vars.ECR_REPOSITORY }}
-        run: docker build --no-cache -t $REGISTRY/$REPOSITORY:$JITBIT_APP_VERSION --build-arg JITBIT_APP_VERSION=$JITBIT_APP_VERSION ./docker
+        run: docker build --no-cache -t $REGISTRY/$REPOSITORY:$JITBIT_APP_VERSION ./docker
 
       - name: Docker push
         env:
