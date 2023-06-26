@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       jitbit_app_version:
-        description: 'Jitbit version, with an underscore to separate major and minor version, e.g. 10_14'
+        description: "Jitbit version, with an underscore to separate major and minor version, e.g. 10_14"
         required: true
         default: "10_14"
         type: string
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write # This is required for requesting the JWT
-      contents: read  # This is required for actions/checkout
+      contents: read # This is required for actions/checkout
     steps:
       - name: Checkout Jitbit app repo
         uses: actions/checkout@v3
@@ -49,7 +49,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Pull down S3 app files
-        run: aws s3 cp s3://${{ secrets.CP_S3_ARTEFACTS_BUCKET }}/app/HelpDesk_$JITBIT_APP_VERSION docker/app/HelpDesk_$JITBIT_APP_VERSION  --recursive
+        run: aws s3 cp s3://${{ secrets.CP_S3_ARTEFACTS_BUCKET }}/app/HelpDesk_$JITBIT_APP_VERSION docker/app  --recursive
 
       - name: Configure aws credentials for ECR image test
         uses: aws-actions/configure-aws-credentials@v2
@@ -64,7 +64,7 @@ jobs:
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ vars.ECR_REPOSITORY }}
-        run: docker build --no-cache -t $REGISTRY/$REPOSITORY:$JITBIT_APP_VERSION --build-arg JITBIT_APP_VERSION=$JITBIT_APP_VERSION ./docker
+        run: docker build --no-cache -t $REGISTRY/$REPOSITORY:$JITBIT_APP_VERSION ./docker
 
       - name: Docker push
         env:
@@ -74,15 +74,15 @@ jobs:
 
       - name: Authenticate to k8s
         run: |
-            echo "${{ secrets.KUBE_CERT }}" > ca.crt
-            kubectl config set-cluster ${{ secrets.KUBE_CLUSTER }} --certificate-authority=./ca.crt --server=https://${{ secrets.KUBE_CLUSTER }}
-            kubectl config set-credentials github-actions-serviceaccount --token=${{ secrets.KUBE_TOKEN }}
-            kubectl config set-context ${{ secrets.KUBE_CLUSTER }} --cluster=${{ secrets.KUBE_CLUSTER }} --user=github-actions-serviceaccount --namespace=$KUBE_NAMESPACE
-            kubectl config use-context ${{ secrets.KUBE_CLUSTER }}
+          echo "${{ secrets.KUBE_CERT }}" > ca.crt
+          kubectl config set-cluster ${{ secrets.KUBE_CLUSTER }} --certificate-authority=./ca.crt --server=https://${{ secrets.KUBE_CLUSTER }}
+          kubectl config set-credentials github-actions-serviceaccount --token=${{ secrets.KUBE_TOKEN }}
+          kubectl config set-context ${{ secrets.KUBE_CLUSTER }} --cluster=${{ secrets.KUBE_CLUSTER }} --user=github-actions-serviceaccount --namespace=$KUBE_NAMESPACE
+          kubectl config use-context ${{ secrets.KUBE_CLUSTER }}
 
       - name: Deploy to Cloud platform sandbox environment
         run: |
-            helm upgrade jitbit ./helm/jitbit --install -n $KUBE_NAMESPACE \
-              --set database.dbConnectionString="${{ secrets.CP_RDS_JITBIT_DATABASE_CONNECTION_STRING }}" \
-              --set image.tag=$JITBIT_APP_VERSION
-              # For testing purposees: --dry-run
+          helm upgrade jitbit ./helm/jitbit --install -n $KUBE_NAMESPACE \
+            --set database.dbConnectionString="${{ secrets.CP_RDS_JITBIT_DATABASE_CONNECTION_STRING }}" \
+            --set image.tag=$JITBIT_APP_VERSION
+            # For testing purposees: --dry-run
