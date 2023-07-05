@@ -30,3 +30,13 @@ variable "service_security_group_id" {
   description = "Security group to associate with the service"
   default     = ""
 }
+
+variable "ecs_task_cpu" {
+  type        = number
+  description = "The number of CPU units used by the task. If using FARGATE launch type task_cpu must match supported memory values [https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#task_size]"
+}
+
+variable "ecs_task_memory" {
+  type        = number
+  description = "The amount of memory (in MiB) used by the task. If using Fargate launch type task_memory must match supported cpu values [https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#task_size]"
+}
