@@ -1,6 +1,9 @@
 FROM alpine:3.18
 
-RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
+RUN apk update && \
+  apk add ca-certificates && \
+  update-ca-certificates && \
+  rm -rf /var/cache/apk/*
 
 # Fix CVE-2023-2650, CVE-2023-1255
 RUN apk upgrade libssl3 libcrypto3
