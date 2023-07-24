@@ -1,4 +1,11 @@
-FROM mcr.microsoft.com/dotnet/aspnet:6.0
+FROM mcr.microsoft.com/dotnet/aspnet:6.0-alpine
+
+RUN apk update && \
+  apk upgrade && \
+  apk add ca-certificates && \
+  update-ca-certificates && \
+  rm -rf /var/cache/apk/*
+
 ARG JITBIT_APP_DIR="app"
 
 # Ensure we listen on any URL
