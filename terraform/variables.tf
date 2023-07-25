@@ -6,6 +6,10 @@ variable "vpc_id" {
 variable "environment" {
   type        = string
   description = "Environment name"
+  validation {
+    condition     = contains(["development", "test", "preproduction", "production"], var.environment)
+    error_message = "Valid values for environment are (development, test, preproduction, production)"
+  }
 }
 
 variable "target_group_name" {
