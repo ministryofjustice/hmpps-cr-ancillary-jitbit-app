@@ -11,7 +11,7 @@ module "container" {
   environment = [
     {
       name  = "AppURL"
-      value = "https://${local.app_name}.hmpps-development.modernisation-platform.service.justice.gov.uk/"
+      value = "https://${local.app_name}.hmpps-${var.environment}.modernisation-platform.service.justice.gov.uk/"
     },
     {
       name  = "AttachmentsS3Bucket"
