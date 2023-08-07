@@ -1,0 +1,36 @@
+name: Modernisation Platform Restart Service
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to restart Jitbit in'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+        - development
+        - test
+        - preproduction
+        - production
+jobs:
+  restart-jitbit:
+    name: Restart Jitbit - ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      SERVICE_TASK_NAME: hmpps-${{ inputs.environment }}-delius-jitbit
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.CICD_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.CICD_SECRET_ACCESS_KEY }}
+          aws-region: "eu-west-2"
+
+      - name: Restart Jitbit
+        run: |
+          aws ecs update-service --force-new-deployment --service ${{ env.SERVICE_TASK_NAME }} --cluster ${{ env.SERVICE_TASK_NAME }}
+      
+      - name: Ensure service stable
+        run: |
+          aws ecs wait services-stable --services ${{ env.SERVICE_TASK_NAME }} --cluster ${{ env.SERVICE_TASK_NAME }}
