@@ -45,7 +45,7 @@ module "container" {
       valueFrom = data.aws_secretsmanager_secret.s3_user_secret_key.arn
     },
     {
-      name = "AppURL"
+      name      = "AppURL"
       valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${local.app_name}/environment/app-url"
     }
   ]
