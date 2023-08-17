@@ -10,10 +10,6 @@ module "container" {
   readonly_root_filesystem = false
   environment = [
     {
-      name  = "AppURL"
-      value = "https://${local.app_name}.hmpps-${var.environment}.modernisation-platform.service.justice.gov.uk/"
-    },
-    {
       name  = "AttachmentsS3Bucket"
       value = var.s3_bucket_name
     },
@@ -47,6 +43,10 @@ module "container" {
     {
       name      = "AttachmentsS3Password"
       valueFrom = data.aws_secretsmanager_secret.s3_user_secret_key.arn
+    },
+    {
+      name      = "AppURL"
+      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${local.app_name}/environment/app-url"
     }
   ]
 }
