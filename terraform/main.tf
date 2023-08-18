@@ -3,10 +3,10 @@ locals {
 }
 
 module "container" {
-  source                   = "git::https://github.com/cloudposse/terraform-aws-ecs-container-definition.git?ref=tags/0.60.0"
-  container_name           = local.app_name
-  container_image          = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
-  essential                = true
+  source          = "git::https://github.com/cloudposse/terraform-aws-ecs-container-definition.git?ref=tags/0.60.0"
+  container_name  = local.app_name
+  container_image = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
+  essential       = true
   container_definition = {
     initProcessEnabled = true
   }
@@ -62,7 +62,7 @@ module "deploy" {
 
   launch_type  = "FARGATE"
   network_mode = "awsvpc"
-  namespace = "hmpps"
+  namespace    = "hmpps"
 
   task_cpu    = var.ecs_task_cpu
   task_memory = var.ecs_task_memory
