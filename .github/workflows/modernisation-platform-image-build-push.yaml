@@ -184,3 +184,12 @@ jobs:
       environment: preproduction
       image_tag: ${{ needs.publish-image.outputs.new_tag }}
     secrets: inherit
+
+  deploy-image-production:
+    if: github.ref == 'refs/heads/main'
+    needs: [build-image, scan-image, "publish-image"]
+    uses: ./.github/workflows/modernisation-platform-image-deploy.yml
+    with:
+      environment: production
+      image_tag: ${{ needs.publish-image.outputs.new_tag }}
+    secrets: inherit
