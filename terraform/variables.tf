@@ -44,3 +44,9 @@ variable "ecs_task_memory" {
   type        = number
   description = "The amount of memory (in MiB) used by the task. If using Fargate launch type task_memory must match supported cpu values [https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#task_size]"
 }
+
+variable "ecs_desired_task_count" {
+  type        = number
+  description = "Number of desired ECS tasks"
+}
+
