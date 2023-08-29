@@ -67,6 +67,8 @@ module "deploy" {
   task_cpu    = var.ecs_task_cpu
   task_memory = var.ecs_task_memory
 
+  desired_count = var.ecs_desired_task_count
+
   service_role_arn   = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-service"
   task_role_arn      = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-task"
   task_exec_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-task-exec"
