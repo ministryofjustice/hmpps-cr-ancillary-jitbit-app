@@ -67,7 +67,9 @@ module "deploy" {
   task_cpu    = var.ecs_task_cpu
   task_memory = var.ecs_task_memory
 
-  desired_count = var.ecs_desired_task_count
+  desired_count                      = var.ecs_desired_task_count
+  deployment_maximum_percent         = var.deployment_maximum_percent
+  deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
 
   service_role_arn   = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-service"
   task_role_arn      = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-task"
