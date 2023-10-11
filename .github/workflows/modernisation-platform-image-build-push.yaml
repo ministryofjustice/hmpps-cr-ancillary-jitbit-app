@@ -1,23 +1,17 @@
 name: Modernisation Platform Image Build and Push
-
 on:
   workflow_dispatch:
   push:
     branches:
       - main
-    paths-ignore:
-      - 'helm/**'
-      - 'kubernetes/**'
-      - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
-
+    paths:
+      - 'docker/Dockerfile'
   pull_request:
     branches:
       - main
     types: [opened, edited, reopened, synchronize]
-    paths-ignore:
-      - 'helm/**'
-      - 'kubernetes/**'
-      - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
+    paths:
+      - 'docker/Dockerfile'
 
 env:
   JITBIT_APP_VERSION: "10.14"
