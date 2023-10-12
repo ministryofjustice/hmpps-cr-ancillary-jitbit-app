@@ -32,3 +32,4 @@ jobs:
       - name: Wait for bastion to scale
         run: |
             aws autoscaling wait instance-in-service --auto-scaling-group-name bastion_linux_daily
+          
