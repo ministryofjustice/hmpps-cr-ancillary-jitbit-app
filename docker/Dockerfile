@@ -9,7 +9,11 @@ RUN apk update && \
 # Fix CVE-2023-2650, CVE-2023-1255
 RUN apk upgrade libssl3 libcrypto3
 
-RUN apk add aspnetcore6-runtime
+RUN apk add aspnetcore6-runtime tzdata
+
+# set timezone
+ENV TZ="Europe/London"
+RUN cp /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Set jitbit app directory
 ARG JITBIT_APP_DIR="app"
