@@ -14,7 +14,7 @@ on:
       - 'docker/Dockerfile'
 
 env:
-  JITBIT_APP_VERSION: "10.14"
+  JITBIT_APP_VERSION: "10.19"
 
 jobs:
   build-image:
