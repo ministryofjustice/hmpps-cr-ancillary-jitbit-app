@@ -1,26 +1,22 @@
 name: Modernisation Platform Image Build and Push
-
 on:
   workflow_dispatch:
   push:
     branches:
       - main
-    paths-ignore:
-      - 'helm/**'
-      - 'kubernetes/**'
-      - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
-
+    paths:
+      - 'docker/Dockerfile'
+      - '.github/workflows/modernisation-platform-image-build-and-push.yml'
   pull_request:
     branches:
       - main
     types: [opened, edited, reopened, synchronize]
-    paths-ignore:
-      - 'helm/**'
-      - 'kubernetes/**'
-      - '.github/workflows/cloud-platform-sandbox-build-deploy.yml'
+    paths:
+      - 'docker/Dockerfile'
+      - '.github/workflows/modernisation-platform-image-build-and-push.yml'
 
 env:
-  JITBIT_APP_VERSION: "10.14"
+  JITBIT_APP_VERSION: "10.19"
 
 jobs:
   build-image:
@@ -52,7 +48,7 @@ jobs:
         if: steps.app-files.outputs.cache-hit != 'true'
         run: |
           aws s3 cp \
-            s3://${{ secrets.MP_ARTEFACT_BUCKET }}/delius-jitbit/app/HelpDesk_${{env.JITBIT_APP_VERSION}} \
+            s3://${{ secrets.MP_SOFTWARE_BUCKET }}/delius-jitbit/app/HelpDesk_${{env.JITBIT_APP_VERSION}} \
             docker/app  \
             --recursive
 
@@ -182,5 +178,14 @@ jobs:
     uses: ./.github/workflows/modernisation-platform-image-deploy.yml
     with:
       environment: preproduction
+      image_tag: ${{ needs.publish-image.outputs.new_tag }}
+    secrets: inherit
+
+  deploy-image-production:
+    if: github.ref == 'refs/heads/main'
+    needs: [build-image, scan-image, "publish-image"]
+    uses: ./.github/workflows/modernisation-platform-image-deploy.yml
+    with:
+      environment: production
       image_tag: ${{ needs.publish-image.outputs.new_tag }}
     secrets: inherit
