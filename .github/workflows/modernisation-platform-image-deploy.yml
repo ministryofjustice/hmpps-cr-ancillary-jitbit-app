@@ -61,8 +61,8 @@ jobs:
         run: |
           exitcode=0
           tfargs="-detailed-exitcode"
-          echo "terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var=\"image_tag=$(echo ${{ inputs.image_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')\" $tfargs"
-          terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var=\"image_tag=$(echo ${{ inputs.image_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')\" $tfargs
+          echo "terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=$(echo ${{ inputs.image_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')" $tfargs"
+          terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=$(echo ${{ inputs.image_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')" $tfargs
           echo "exitcode=${exitcode}"  # 0=clean plan, 1=error, 2=stuff in plan
           echo "exitcode=${exitcode}" >> $GITHUB_OUTPUT
           (( exitcode == 1 )) && exit 1 || exit 0
