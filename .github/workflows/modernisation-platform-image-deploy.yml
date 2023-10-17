@@ -11,7 +11,7 @@ on:
       terraform_version:
         required: false
         type: string
-        default: "latest"
+        default: "~1.5"
   workflow_dispatch:
     inputs:
       environment:
@@ -23,7 +23,7 @@ on:
       terraform_version:
         required: false
         type: string
-        default: "latest"
+        default: "~1.5"
 jobs:
   plan:
     name: Plan - ${{ inputs.environment }}
