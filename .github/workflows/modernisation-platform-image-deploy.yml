@@ -8,6 +8,10 @@ on:
       image_tag:
         required: true
         type: string
+      terraform_version:
+        required: false
+        type: string
+        default: "~1.5"
   workflow_dispatch:
     inputs:
       environment:
@@ -16,10 +20,61 @@ on:
       image_tag:
         required: true
         type: string
+      terraform_version:
+        required: false
+        type: string
+        default: "~1.5"
 jobs:
+  plan:
+    name: Plan - ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    outputs:
+      plan_exitcode: "${{ steps.plan.outputs.exitcode }}"
+    environment: ${{ inputs.environment }}-plan
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.CICD_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.CICD_SECRET_ACCESS_KEY }}
+          aws-region: "eu-west-2"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "${{ inputs.terraform_version }}"
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: |
+          terraform --version
+          echo "terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl"
+          terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl
+      
+      - name: Terraform Plan
+        id: plan
+        working-directory: terraform
+        run: |
+          set -o pipefail
+          exitcode=0
+          tfargs="-detailed-exitcode"
+          echo "terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=$(echo ${{ inputs.image_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')" $tfargs | tee tfplan.txt || exitcode=$?"
+          terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=$(echo ${{ inputs.image_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')" $tfargs | tee tfplan.txt || exitcode=$?
+          echo "exitcode=${exitcode}"  # 0=clean plan, 1=error, 2=stuff in plan
+          echo "exitcode=${exitcode}" >> $GITHUB_OUTPUT
+          (( exitcode == 1 )) && exit 1 || exit 0
+
   deploy:
     name: Deploy - ${{ inputs.environment }}
     runs-on: ubuntu-latest
+    needs: plan
+    if: needs.plan.outputs.plan_exitcode == '2'
     environment: ${{ inputs.environment }}
     steps:
       - name: Checkout Code
@@ -33,6 +88,12 @@ jobs:
           aws-access-key-id: ${{ secrets.CICD_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.CICD_SECRET_ACCESS_KEY }}
           aws-region: "eu-west-2"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "${{ inputs.terraform_version }}"
+          terraform_wrapper: false
 
       - name: Deploy to ECS
         id: deploy
