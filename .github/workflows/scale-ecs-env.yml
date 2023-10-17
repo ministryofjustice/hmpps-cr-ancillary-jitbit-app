@@ -20,6 +20,13 @@ jobs:
               echo DESIRED_COUNT="0" >> $GITHUB_ENV
             fi
 
+        - name: Configure AWS Credentials
+          uses: aws-actions/configure-aws-credentials@v4 
+          with:
+            role-to-assume: "arn:aws:iam::013433889002:role/modernisation-platform-oidc-cicd"
+            role-session-name: githubactionsrolesession
+            aws-region: "eu-west-2"
+
         - name: Scale Jitbit ECS Service
           run: |
             aws ecs update-service --cluster hmpps-${{ github.event.inputs.environment }}-delius-jitbit --service hmpps-${{ github.event.inputs.environment }}-delius-jitbit --desired-count ${{ github.env.DESIRED_COUNT }} --region eu-west-2
