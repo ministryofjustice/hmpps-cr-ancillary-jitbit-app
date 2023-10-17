@@ -1,16 +1,10 @@
 name: Modernisation Platform Image Build and Push
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'docker/Dockerfile'
-      - '.github/workflows/modernisation-platform-image-build-and-push.yml'
   pull_request:
     branches:
       - main
-    types: [opened, edited, reopened, synchronize]
+    types: [opened, edited, reopened, synchronize, closed]
     paths:
       - 'docker/Dockerfile'
       - '.github/workflows/modernisation-platform-image-build-push.yml'
@@ -163,18 +157,9 @@ jobs:
       image_tag: ${{ needs.publish-image.outputs.new_tag }}
     secrets: inherit
 
-  deploy-image-test:
-    if: ${{ github.ref == 'refs/heads/main' }}
-    needs: [build-image, scan-image, "publish-image"]
-    uses: ./.github/workflows/modernisation-platform-image-deploy.yml
-    with:
-      environment: test
-      image_tag: ${{ needs.publish-image.outputs.new_tag }}
-    secrets: inherit
-
   deploy-image-preproduction:
-    if: ${{ github.ref == 'refs/heads/main' }}
-    needs: [build-image, scan-image, "publish-image"]
+    if: ${{ github.ref == 'refs/heads/main' || github.event.pull_request.merged == true }}
+    needs: [build-image, scan-image, "publish-image", "deploy-image-development"]
     uses: ./.github/workflows/modernisation-platform-image-deploy.yml
     with:
       environment: preproduction
@@ -182,10 +167,19 @@ jobs:
     secrets: inherit
 
   deploy-image-production:
-    if: ${{ github.ref == 'refs/heads/main' }}
-    needs: [build-image, scan-image, "publish-image"]
+    if: ${{ github.ref == 'refs/heads/main' || github.event.pull_request.merged == true }}
+    needs: [build-image, scan-image, "publish-image", "deploy-image-preproduction"]
     uses: ./.github/workflows/modernisation-platform-image-deploy.yml
     with:
       environment: production
+      image_tag: ${{ needs.publish-image.outputs.new_tag }}
+    secrets: inherit
+
+  deploy-image-test:
+    if: ${{ github.ref == 'refs/heads/main' || github.event.pull_request.merged == true }}
+    needs: [build-image, scan-image, "publish-image", "deploy-image-production"]
+    uses: ./.github/workflows/modernisation-platform-image-deploy.yml
+    with:
+      environment: test
       image_tag: ${{ needs.publish-image.outputs.new_tag }}
     secrets: inherit
