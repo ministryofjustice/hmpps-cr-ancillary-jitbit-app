@@ -159,7 +159,7 @@ jobs:
 
   deploy-image-preproduction:
     if: ${{ github.ref == 'refs/heads/main' || github.event.pull_request.merged == true }}
-    needs: [build-image, scan-image, "publish-image", "deploy-image-development"]
+    needs: [build-image, scan-image, "publish-image"]
     uses: ./.github/workflows/modernisation-platform-image-deploy.yml
     with:
       environment: preproduction
@@ -168,7 +168,7 @@ jobs:
 
   deploy-image-production:
     if: ${{ github.ref == 'refs/heads/main' || github.event.pull_request.merged == true }}
-    needs: [build-image, scan-image, "publish-image", "deploy-image-preproduction"]
+    needs: [build-image, scan-image, "publish-image"]
     uses: ./.github/workflows/modernisation-platform-image-deploy.yml
     with:
       environment: production
@@ -177,7 +177,7 @@ jobs:
 
   deploy-image-test:
     if: ${{ github.ref == 'refs/heads/main' || github.event.pull_request.merged == true }}
-    needs: [build-image, scan-image, "publish-image", "deploy-image-production"]
+    needs: [build-image, scan-image, "publish-image"]
     uses: ./.github/workflows/modernisation-platform-image-deploy.yml
     with:
       environment: test
