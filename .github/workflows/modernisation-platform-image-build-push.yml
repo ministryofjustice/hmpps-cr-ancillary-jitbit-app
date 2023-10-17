@@ -13,7 +13,7 @@ on:
     types: [opened, edited, reopened, synchronize]
     paths:
       - 'docker/Dockerfile'
-      - '.github/workflows/modernisation-platform-image-build-and-push.yml'
+      - '.github/workflows/modernisation-platform-image-build-push.yml'
 
 env:
   JITBIT_APP_VERSION: "10.19"
@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
