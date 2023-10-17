@@ -6,12 +6,14 @@ on:
       - main
     paths:
       - 'docker/Dockerfile'
+      - '.github/workflows/modernisation-platform-image-build-and-push.yml'
   pull_request:
     branches:
       - main
     types: [opened, edited, reopened, synchronize]
     paths:
       - 'docker/Dockerfile'
+      - '.github/workflows/modernisation-platform-image-build-and-push.yml'
 
 env:
   JITBIT_APP_VERSION: "10.19"
