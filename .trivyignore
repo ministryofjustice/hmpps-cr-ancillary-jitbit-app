@@ -1,0 +1,5 @@
+# False positive, fixed in .NET 7.0.112 and 7.0.12
+# https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-44487
+CVE-2023-36435
+CVE-2023-38171
+CVE-2023-44487
