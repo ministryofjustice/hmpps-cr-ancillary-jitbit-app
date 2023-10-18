@@ -6,8 +6,9 @@ on:
 jobs:
     # trigger the workflow in 'scale-up-ecs-env.yml'
     scale-up-dev:
-        uses: ./.github/workflows/scale-up-ecs-env.yml
+        uses: ./.github/workflows/scale-ecs-env.yml
         with:
             environment: development
+            action: up
         secrets: inherit
     # add more if needed
