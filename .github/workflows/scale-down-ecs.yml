@@ -10,5 +10,4 @@ jobs:
         with:
             environment: development
             action: down
-        secrets: inherit
     # add more if needed
