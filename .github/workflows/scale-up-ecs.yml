@@ -1,4 +1,4 @@
-name: Scale Jitbit ECS Service up in environment
+name: Scale Jitbit ECS Service up
 on:
   schedule:
     - cron:  '0 6 * * 1-5' # every weekday at 6am
@@ -9,6 +9,18 @@ jobs:
         uses: ./.github/workflows/scale-ecs-env.yml
         with:
             environment: development
+            action: up
+        secrets: inherit
+    scale-up-test:
+        uses: ./.github/workflows/scale-ecs-env.yml
+        with:
+            environment: test
+            action: up
+        secrets: inherit
+    scale-up-preproduction:
+        uses: ./.github/workflows/scale-ecs-env.yml
+        with:
+            environment: preproduction
             action: up
         secrets: inherit
     # add more if needed
