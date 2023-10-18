@@ -1,0 +1,32 @@
+name: Change scaling in for ECS service
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        options:
+          - development
+          - test
+          - preproduction
+      scaling-state:
+        type: choice
+        options:
+          - "enabled"
+          - "disabled"
+      
+
+jobs:
+    scale:
+        runs-on: ubuntu-latest
+        environment: ${{ github.event.inputs.environment }}
+        steps:
+        - name: Configure AWS Credentials
+          uses: aws-actions/configure-aws-credentials@v4 
+          with:
+            role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+            role-session-name: githubactionsrolesession
+            aws-region: "eu-west-2"
+
+        - name: Set tag on ECS Service
+          run: |
+            aws tag-resource --resource-arn arn:aws:ecs:eu-west-2:${{ vars.AWS_ACCOUNT_ID }}:service/hmpps-${{ github.event.inputs.environment }}-delius-jitbit/hmpps-${{ github.event.inputs.environment }}-delius-jitbit --tags Key=scaling_state,Value=${{ github.event.inputs.scaling-scaling-state }}
