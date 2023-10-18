@@ -1,4 +1,4 @@
-name: Scale Jitbit ECS Service up in environment
+name: Scale Jitbit ECS Service in environment
 on:
   workflow_call:
     inputs:
