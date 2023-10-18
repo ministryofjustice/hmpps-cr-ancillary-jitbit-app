@@ -15,7 +15,7 @@ jobs:
         - name: Ensure non production environment
           run: |
             if [ "${{ github.event.inputs.environment }}" = "production" ||  ${{ github.event.inputs.environment}}" != "preproduction"}}]; then
-              echo "Production environment cannot be scaled" >&2
+              echo "Production environment cannot be scaled"
               exit 1
             fi
 
@@ -41,4 +41,3 @@ jobs:
         - name: Wait for Jitbit to scale
           run: |
             aws ecs wait services-stable --cluster hmpps-${{ github.event.inputs.environment }}-delius-jitbit --service hmpps-${{ github.event.inputs.environment }}-delius-jitbit --region eu-west-2
-            
