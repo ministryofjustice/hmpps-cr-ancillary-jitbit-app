@@ -12,6 +12,13 @@ jobs:
         runs-on: ubuntu-latest
         environment: ${{ github.event.inputs.environment }}
         steps:
+        - name: Ensure non production environment
+          run: |
+            if [ "${{ github.event.inputs.environment }}" = "production" ||  ${{ github.event.inputs.environment}}" != "preproduction"}}]; then
+              echo "Production environment cannot be scaled" >&2
+              exit 1
+            fi
+
         - name: Calculate desired count
           run: |
             if [ "${{ github.event.inputs.action }}" = "up" ]; then
