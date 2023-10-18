@@ -1,8 +1,7 @@
 name: Scale Jitbit ECS Service up in environment
 on:
   schedule:
-    - cron:  '0 21 * * ' # every day at 21:00 UTC
-
+    - cron:  '0 21 * * 1-5' # every weekday at 9pm
 jobs:
     # trigger the workflow in 'scale-up-ecs-env.yml'
     scale-down-dev:
