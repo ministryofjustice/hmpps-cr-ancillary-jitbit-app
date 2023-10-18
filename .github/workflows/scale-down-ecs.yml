@@ -5,7 +5,7 @@ on:
 
 jobs:
     # trigger the workflow in 'scale-up-ecs-env.yml'
-    scale-up-dev:
+    scale-down-dev:
         uses: ./.github/workflows/scale-ecs-env.yml
         with:
             environment: development
