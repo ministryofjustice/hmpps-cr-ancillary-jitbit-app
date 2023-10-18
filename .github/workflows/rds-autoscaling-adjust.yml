@@ -3,7 +3,10 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        type: string
+        type: choice
+        options:
+          - "development"
+          - "test"
       scaling-type:
         type: choice
         options:
