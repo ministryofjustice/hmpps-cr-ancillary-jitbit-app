@@ -4,23 +4,15 @@ on:
     - cron:  '0 5 * * 1-5' # every weekday at 6am BST, 5am UTC
 
 jobs:
-    # trigger the workflow in 'scale-up-ecs-env.yml'
-    scale-up-dev:
+  scale-up-ecs-env:
+    runs-on: ubuntu-latest
+    name: Scale up ECS service
+    strategy:
+      matrix:
+        environment: ["development", "test", "preproduction"]
+    steps:
+      - name: Scale up ECS service
         uses: ./.github/workflows/scale-ecs-env.yml
         with:
-            environment: development
-            action: up
-        secrets: inherit
-    scale-up-test:
-        uses: ./.github/workflows/scale-ecs-env.yml
-        with:
-            environment: test
-            action: up
-        secrets: inherit
-    scale-up-preproduction:
-        uses: ./.github/workflows/scale-ecs-env.yml
-        with:
-            environment: preproduction
-            action: up
-        secrets: inherit
-    # add more if needed
+          environment: ${{ matrix.environment }}
+          action: up
