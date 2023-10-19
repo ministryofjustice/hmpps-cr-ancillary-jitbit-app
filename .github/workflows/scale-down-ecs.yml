@@ -2,24 +2,18 @@ name: Scale Jitbit ECS Service down
 on:
   schedule:
     - cron:  '0 20 * * 1-5' # every weekday at 9pm BST, 8pm UTC
+
+# use matrix to run the same job for multiple environments
 jobs:
-    # trigger the workflow in 'scale-down-ecs-env.yml'
-    scale-down-dev:
+  scale-down-ecs-env:
+    runs-on: ubuntu-latest
+    name: Scale down ECS service
+    strategy:
+      matrix:
+        environment: ["development", "test", "preproduction"]
+    steps:
+      - name: Scale down ECS service
         uses: ./.github/workflows/scale-ecs-env.yml
         with:
-            environment: development
-            action: down
-        secrets: inherit
-    scale-down-test:
-        uses: ./.github/workflows/scale-ecs-env.yml
-        with:
-            environment: test
-            action: down
-        secrets: inherit
-    scale-down-preproduction:
-        uses: ./.github/workflows/scale-ecs-env.yml
-        with:
-            environment: preproduction
-            action: down
-        secrets: inherit
-    # add more if needed
+          environment: ${{ matrix.environment }}
+          action: down
