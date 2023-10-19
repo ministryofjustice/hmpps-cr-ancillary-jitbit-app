@@ -16,3 +16,4 @@ jobs:
         with:
           environment: ${{ matrix.environment }}
           action: up
+          
