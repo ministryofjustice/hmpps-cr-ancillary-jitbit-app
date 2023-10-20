@@ -12,6 +12,10 @@ on:
 env:
   JITBIT_APP_VERSION: "10.19"
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build-image:
     name: Build Image
