@@ -28,7 +28,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
-          role-session-name: "${{ github.repository }}-${{ github.workflow }}-${{ github.run_number }}"
+          role-session-name: "${{ github.repository }}"
           aws-region: "eu-west-2"
       
       - name: Cache app files
