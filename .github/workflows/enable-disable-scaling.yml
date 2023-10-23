@@ -14,7 +14,6 @@ on:
           - "enabled"
           - "disabled"
       
-
 jobs:
     scale:
         runs-on: ubuntu-latest
