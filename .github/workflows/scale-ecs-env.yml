@@ -31,7 +31,7 @@ jobs:
           uses: aws-actions/configure-aws-credentials@v4 
           with:
             role-to-assume: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
-            role-session-name: githubactionsrolesession
+            role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
             aws-region: "eu-west-2"
 
         - name: Get scaling state tag value

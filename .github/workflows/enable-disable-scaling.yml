@@ -23,7 +23,7 @@ jobs:
           uses: aws-actions/configure-aws-credentials@v4 
           with:
             role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
-            role-session-name: githubactionsrolesession
+            role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
             aws-region: "eu-west-2"
 
         - name: Set tag on ECS Service
