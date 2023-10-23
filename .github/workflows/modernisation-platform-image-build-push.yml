@@ -102,7 +102,7 @@ jobs:
     name: Publish image
     needs: [build-image, scan-image]
     permissions:
-      id-token: write
+      id-token:
       contents: write
     runs-on: ubuntu-latest
     outputs:
@@ -135,7 +135,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
-          role-session-name: "${{ github.repository }}-${{ github.workflow }}-${{ github.run_number }}"
+          role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
           aws-region: "eu-west-2"
 
       - name: Load and retag image for publish
