@@ -1,0 +1,54 @@
+name: Scale Jitbit ECS Service in environment
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+      action:
+        type: string
+
+jobs:
+    scale:
+        runs-on: ubuntu-latest
+        environment: ${{ github.event.inputs.environment }}
+        steps:
+        - name: Ensure non production environment
+          run: |
+            if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+              echo "Production environment cannot be scaled"
+              exit 1
+            fi
+
+        - name: Calculate desired count
+          run: |
+            if [ "${{ github.event.inputs.action }}" = "up" ]; then
+              echo DESIRED_COUNT="1" >> $GITHUB_ENV
+            elif [ "${{ github.event.inputs.action }}" = "down" ]; then
+              echo DESIRED_COUNT="0" >> $GITHUB_ENV
+            fi
+
+        - name: Configure AWS Credentials
+          uses: aws-actions/configure-aws-credentials@v4 
+          with:
+            role-to-assume: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+            role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
+            aws-region: "eu-west-2"
+
+        - name: Get scaling state tag value
+          id: scaling_state
+          run: |
+            scaling_state=$(aws ecs list-tags-for-resource --resource-arn arn:aws:ecs:eu-west-2:${{ secrets.AWS_ACCOUNT_ID }}:service/hmpps-${{ github.event.inputs.environment }}-delius-jitbit/hmpps-${{ github.event.inputs.environment }}-delius-jitbit | jq -rc '.tags[] | select(.key == "Name").value')
+
+            echo "Scaling state is $scaling_state"
+            echo "SCALING_STATE=$scaling_state" >> $GITHUB_OUTPUT
+
+        - name: Scale Jitbit ECS Service
+        # if scaling state is enabled, then scale
+          if: ${{ steps.scaling_state.outputs.SCALING_STATE == 'enabled' }}
+          run: |
+            aws ecs update-service --cluster hmpps-${{ github.event.inputs.environment }}-delius-jitbit --service hmpps-${{ github.event.inputs.environment }}-delius-jitbit --desired-count ${{ github.env.DESIRED_COUNT }} --region eu-west-2
+
+        - name: Wait for Jitbit to scale
+          if: ${{ steps.scaling_state.outputs.SCALING_STATE == 'enabled' }}
+          run: |
+            aws ecs wait services-stable --cluster hmpps-${{ github.event.inputs.environment }}-delius-jitbit --service hmpps-${{ github.event.inputs.environment }}-delius-jitbit --region eu-west-2

@@ -1,0 +1,19 @@
+name: Scale Jitbit ECS Service up
+on:
+  schedule:
+    - cron:  '0 5 * * 1-5' # every weekday at 6am BST, 5am UTC
+
+jobs:
+  scale-up-ecs-env:
+    runs-on: ubuntu-latest
+    name: Scale up ECS service
+    strategy:
+      matrix:
+        environment: ["development", "test", "preproduction"]
+    steps:
+      - name: Scale up ECS service
+        uses: ./.github/workflows/scale-ecs-env.yml
+        with:
+          environment: ${{ matrix.environment }}
+          action: up
+          
