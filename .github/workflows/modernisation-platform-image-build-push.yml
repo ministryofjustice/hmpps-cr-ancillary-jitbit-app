@@ -16,6 +16,7 @@ jobs:
   build-image:
     name: Build Image
     permissions:
+      id-token: write
       contents: read
     runs-on: ubuntu-latest
     steps:
@@ -25,11 +26,11 @@ jobs:
           fetch-depth: 0
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.CICD_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.CICD_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+          role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
+          aws-region: "eu-west-2"
       
       - name: Cache app files
         id: app-files
@@ -101,6 +102,7 @@ jobs:
     name: Publish image
     needs: [build-image, scan-image]
     permissions:
+      id-token: write
       contents: write
     runs-on: ubuntu-latest
     outputs:
@@ -132,9 +134,9 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.CICD_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.CICD_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+          role-session-name: "${{ github.repository }}-${{ github.workflow }}-${{ github.run_number }}"
+          aws-region: "eu-west-2"
 
       - name: Load and retag image for publish
         run: |
