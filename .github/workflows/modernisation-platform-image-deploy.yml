@@ -33,6 +33,9 @@ jobs:
     environment: ${{ inputs.environment }}-plan
     strategy:
       fail-fast: false
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -74,6 +77,9 @@ jobs:
     name: Deploy - ${{ inputs.environment }}
     runs-on: ubuntu-latest
     needs: plan
+    permissions:
+      id-token: write
+      contents: read
     if: needs.plan.outputs.plan_exitcode == '2'
     environment: ${{ inputs.environment }}
     steps:

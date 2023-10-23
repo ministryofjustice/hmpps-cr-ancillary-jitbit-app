@@ -17,6 +17,9 @@ jobs:
     name: Restart Jitbit - ${{ inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
     env:
       SERVICE_TASK_NAME: hmpps-${{ inputs.environment }}-delius-jitbit
     steps:

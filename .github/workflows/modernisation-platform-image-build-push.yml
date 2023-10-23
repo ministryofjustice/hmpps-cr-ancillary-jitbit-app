@@ -102,7 +102,7 @@ jobs:
     name: Publish image
     needs: [build-image, scan-image]
     permissions:
-      id-token:
+      id-token: write
       contents: write
     runs-on: ubuntu-latest
     outputs:
