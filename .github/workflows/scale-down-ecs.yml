@@ -6,16 +6,12 @@ on:
 # use matrix to run the same job for multiple environments
 jobs:
   scale-down-ecs-env:
-    runs-on: ubuntu-latest
-    name: Scale down ECS service
     strategy:
       matrix:
         environment: ["development"]
 #        environment: ["development", "test", "preproduction"]
-    steps:
-      - name: Scale down ECS service
-        uses: ./.github/workflows/scale-ecs-env.yml
-        with:
-          environment: ${{ matrix.environment }}
-          action: down
+    uses: ./.github/workflows/scale-ecs-env.yml
+    with:
+        environment: ${{ matrix.environment }}
+        action: down
           
