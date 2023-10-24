@@ -31,4 +31,4 @@ jobs:
 
         - name: Set tag on ECS Service
           run: |
-            aws ecs tag-resource --resource-arn arn:aws:ecs:eu-west-2:${{ vars.AWS_ACCOUNT_ID }}:service/hmpps-${{ github.event.inputs.environment }}-delius-jitbit/hmpps-${{ github.event.inputs.environment }}-delius-jitbit --tags Key=scaling_state,Value=${{ github.event.inputs.scaling-state }}
+            aws ecs tag-resource --resource-arn arn:aws:ecs:eu-west-2:${{ vars.AWS_ACCOUNT_ID }}:service/hmpps-${{ github.event.inputs.environment }}-delius-jitbit/hmpps-${{ github.event.inputs.environment }}-delius-jitbit --tags key=scaling_state,value=${{ github.event.inputs.scaling-state }}
