@@ -10,7 +10,8 @@ jobs:
     name: Scale down ECS service
     strategy:
       matrix:
-        environment: ["development", "test", "preproduction"]
+        environment: ["development"]
+#        environment: ["development", "test", "preproduction"]
     steps:
       - name: Scale down ECS service
         uses: ./.github/workflows/scale-ecs-env.yml
