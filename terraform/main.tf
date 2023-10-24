@@ -86,6 +86,10 @@ module "deploy" {
     }
   ]
 
+  tags = {
+    "scaling_state" = lookup(data.aws_ecs_service.tags, "scaling_state", false) ? data.aws_ecs_service.tags.scaling_state : "disabled"
+  }
+
   security_group_ids = [var.service_security_group_id]
 
   subnet_ids = [
