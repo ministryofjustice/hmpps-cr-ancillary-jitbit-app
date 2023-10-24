@@ -9,7 +9,8 @@ jobs:
     name: Scale up ECS service
     strategy:
       matrix:
-        environment: ["development", "test", "preproduction"]
+        environment: ["development"]
+#        environment: ["development", "test", "preproduction"]
     steps:
       - name: Scale up ECS service
         uses: ./.github/workflows/scale-ecs-env.yml
