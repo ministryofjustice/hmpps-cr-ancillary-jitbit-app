@@ -86,6 +86,10 @@ module "deploy" {
     }
   ]
 
+  tags = {
+    "scaling_state" = lookup(data.aws_ecs_service.tags, "scaling_state", false) ? data.aws_ecs_service.tags.scaling_state : "disabled"
+  }
+
   security_group_ids = [var.service_security_group_id]
 
   subnet_ids = [
@@ -97,4 +101,9 @@ module "deploy" {
   ignore_changes_task_definition = false
   redeploy_on_apply              = false
   force_new_deployment           = false
+}
+
+data "aws_ecs_service" "this" {
+  service_name = "hmpps-${var.environment}-delius-jitbit"
+  cluster_arn  = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}"
 }
