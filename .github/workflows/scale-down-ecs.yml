@@ -6,6 +6,8 @@ on:
 # use matrix to run the same job for multiple environments
 jobs:
   scale-down-ecs-env:
+    permissions:
+        id-token: write
     strategy:
       matrix:
         environment: ["development"]

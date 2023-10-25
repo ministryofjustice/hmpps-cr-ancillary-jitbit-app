@@ -5,6 +5,8 @@ on:
 
 jobs:
   scale-up-ecs-env:
+    permissions:
+        id-token: write
     strategy:
       matrix:
         environment: ["development"]
