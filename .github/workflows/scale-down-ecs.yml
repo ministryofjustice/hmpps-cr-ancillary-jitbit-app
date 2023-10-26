@@ -18,4 +18,5 @@ jobs:
     with:
         environment: ${{ matrix.environment }}
         action: down
+    secrets: inherit
           
