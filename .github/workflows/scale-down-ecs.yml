@@ -2,6 +2,7 @@ name: Scale Jitbit ECS Service down
 on:
   schedule:
     - cron:  '30 10 * * 1-5' # runs every weekday at 22:30 UTC
+  workflow_dispatch:
 
 # use matrix to run the same job for multiple environments
 jobs:
