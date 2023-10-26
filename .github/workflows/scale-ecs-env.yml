@@ -32,14 +32,14 @@ jobs:
         - name: Configure AWS Credentials
           uses: aws-actions/configure-aws-credentials@v4 
           with:
-            role-to-assume: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+            role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
             role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
             aws-region: "eu-west-2"
 
         - name: Get scaling state tag value
           id: scaling_state
           run: |
-            scaling_state=$(aws ecs list-tags-for-resource --resource-arn arn:aws:ecs:eu-west-2:${{ secrets.AWS_ACCOUNT_ID }}:service/hmpps-${{ inputs.environment }}-delius-jitbit/hmpps-${{ inputs.environment }}-delius-jitbit | jq -rc '.tags[] | select(.key == "scaling_state").value')
+            scaling_state=$(aws ecs list-tags-for-resource --resource-arn arn:aws:ecs:eu-west-2:${{ vars.AWS_ACCOUNT_ID }}:service/hmpps-${{ inputs.environment }}-delius-jitbit/hmpps-${{ inputs.environment }}-delius-jitbit | jq -rc '.tags[] | select(.key == "scaling_state").value')
 
             echo "Scaling state is $scaling_state"
             echo "SCALING_STATE=$scaling_state" >> $GITHUB_OUTPUT
