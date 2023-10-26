@@ -12,7 +12,7 @@ jobs:
         contents: read
     strategy:
       matrix:
-        environment: ["development"]
+        environment: ["development", "test"]
 #        environment: ["development", "test", "preproduction"]
     uses: ./.github/workflows/scale-ecs-env.yml
     with:
