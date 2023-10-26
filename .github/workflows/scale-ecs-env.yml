@@ -12,11 +12,11 @@ jobs:
         permissions:
           id-token: write
         runs-on: ubuntu-latest
-        environment: ${{ github.event.inputs.environment }}
+        environment: ${{ inputs.environment }}
         steps:
         - name: Ensure non production environment
           run: |
-            if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+            if [ "${{ inputs.environment }}" = "production" ]; then
               echo "Production environment cannot be scaled"
               exit 1
             fi
@@ -39,7 +39,7 @@ jobs:
         - name: Get scaling state tag value
           id: scaling_state
           run: |
-            scaling_state=$(aws ecs list-tags-for-resource --resource-arn arn:aws:ecs:eu-west-2:${{ secrets.AWS_ACCOUNT_ID }}:service/hmpps-${{ github.event.inputs.environment }}-delius-jitbit/hmpps-${{ github.event.inputs.environment }}-delius-jitbit | jq -rc '.tags[] | select(.key == "Name").value')
+            scaling_state=$(aws ecs list-tags-for-resource --resource-arn arn:aws:ecs:eu-west-2:${{ secrets.AWS_ACCOUNT_ID }}:service/hmpps-${{ inputs.environment }}-delius-jitbit/hmpps-${{ inputs.environment }}-delius-jitbit | jq -rc '.tags[] | select(.key == "Name").value')
 
             echo "Scaling state is $scaling_state"
             echo "SCALING_STATE=$scaling_state" >> $GITHUB_OUTPUT
@@ -48,9 +48,9 @@ jobs:
         # if scaling state is enabled, then scale
           if: ${{ steps.scaling_state.outputs.SCALING_STATE == 'enabled' }}
           run: |
-            aws ecs update-service --cluster hmpps-${{ github.event.inputs.environment }}-delius-jitbit --service hmpps-${{ github.event.inputs.environment }}-delius-jitbit --desired-count ${{ github.env.DESIRED_COUNT }} --region eu-west-2
+            aws ecs update-service --cluster hmpps-${{ inputs.environment }}-delius-jitbit --service hmpps-${{ inputs.environment }}-delius-jitbit --desired-count ${{ github.env.DESIRED_COUNT }} --region eu-west-2
 
         - name: Wait for Jitbit to scale
           if: ${{ steps.scaling_state.outputs.SCALING_STATE == 'enabled' }}
           run: |
-            aws ecs wait services-stable --cluster hmpps-${{ github.event.inputs.environment }}-delius-jitbit --service hmpps-${{ github.event.inputs.environment }}-delius-jitbit --region eu-west-2
+            aws ecs wait services-stable --cluster hmpps-${{ inputs.environment }}-delius-jitbit --service hmpps-${{ inputs.environment }}-delius-jitbit --region eu-west-2
