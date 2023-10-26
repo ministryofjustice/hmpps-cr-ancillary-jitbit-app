@@ -19,6 +19,8 @@ jobs:
           with:
             app-id: ${{ secrets.HMPPS_BOT_APP_ID }}
             private-key: ${{ secrets.HMPPS_BOT_PRIVATE_KEY }}
+            owner: ministryofjustice
+            skip-token-revoke: true
         
         - name: Get github environment ID from name via api
           run: |
