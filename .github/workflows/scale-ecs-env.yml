@@ -51,6 +51,6 @@ jobs:
             aws ecs update-service --cluster hmpps-${{ inputs.environment }}-delius-jitbit --service hmpps-${{ inputs.environment }}-delius-jitbit --desired-count ${{ env.DESIRED_COUNT }} --region eu-west-2
 
         - name: Wait for Jitbit to scale
-          if: ${{ steps.scaling_state.outputs.SCALING_STATE == 'enabled' }}
+          if: ${{ steps.scaling_state.outputs.SCALING_STATE == 'enabled' && inputs.action == 'up' }}
           run: |
             aws ecs wait services-stable --cluster hmpps-${{ inputs.environment }}-delius-jitbit --service hmpps-${{ inputs.environment }}-delius-jitbit --region eu-west-2
