@@ -9,6 +9,7 @@ jobs:
   scale-down-ecs-env:
     permissions:
         id-token: write
+        contents: read
     strategy:
       matrix:
         environment: ["development"]
