@@ -13,14 +13,10 @@ jobs:
       steps:
         - name: Generate token
           id: generate_token
-          uses: tibdex/github-app-token@v1.8.0
+          uses: tibdex/github-app-token@v2.1.0
           with:
             app_id: ${{ secrets.HMPPS_BOT_APP_ID }}
             private_key: ${{ secrets.HMPPS_BOT_PRIVATE_KEY }}
-        
-        - name: sleep for 30 seconds whilst jobs start up
-          run: |
-            sleep 30
         
         - name: Get github environment ID from name via api
           run: |
