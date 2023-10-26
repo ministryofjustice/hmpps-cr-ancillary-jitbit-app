@@ -1,7 +1,7 @@
 name: Scale Jitbit ECS Service up
 on:
   schedule:
-    - cron:  '45 10 * * 1-5' # every weekday at 6am BST, 5am UTC
+    - cron:  '00 05 * * 1-5' # every weekday at 5am UTC
   workflow_dispatch:
 
 jobs:
