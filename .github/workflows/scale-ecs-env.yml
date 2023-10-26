@@ -23,9 +23,9 @@ jobs:
 
         - name: Calculate desired count
           run: |
-            if [ "${{ github.event.inputs.action }}" = "up" ]; then
+            if [ "${{ inputs.action }}" = "up" ]; then
               echo DESIRED_COUNT="1" >> $GITHUB_ENV
-            elif [ "${{ github.event.inputs.action }}" = "down" ]; then
+            elif [ "${{ inputs.action }}" = "down" ]; then
               echo DESIRED_COUNT="0" >> $GITHUB_ENV
             fi
 
