@@ -29,6 +29,6 @@ jobs:
             role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
             aws-region: "eu-west-2"
 
-        - name: Set tag on ECS Service
+        - name: Set ssm parameter for ECS Service scaling state
           run: |
-            aws ecs tag-resource --resource-arn arn:aws:ecs:eu-west-2:${{ vars.AWS_ACCOUNT_ID }}:service/hmpps-${{ github.event.inputs.environment }}-delius-jitbit/hmpps-${{ github.event.inputs.environment }}-delius-jitbit --tags key=scaling_state,value=${{ github.event.inputs.scaling-state }}
+            aws ssm put-parameter --name "/ecs/service/hmpps-${{ inputs.environment }}-delius-jitbit/scaling-state" --value "enabled" --type "String" --overwrite
