@@ -1,0 +1,34 @@
+name: Enable/Disable Scaling for ECS
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        options:
+          - development
+          - test
+          - preproduction
+      scaling-state:
+        type: choice
+        options:
+          - "enabled"
+          - "disabled"
+      
+jobs:
+    scale:
+        permissions:
+          id-token: write
+          contents: read
+        runs-on: ubuntu-latest
+        environment: ${{ github.event.inputs.environment }}
+        steps:
+        - name: Configure AWS Credentials
+          uses: aws-actions/configure-aws-credentials@v4 
+          with:
+            role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+            role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
+            aws-region: "eu-west-2"
+
+        - name: Set ssm parameter for ECS Service scaling state
+          run: |
+            aws ssm put-parameter --name "/ecs/service/hmpps-${{ inputs.environment }}-delius-jitbit/scaling-state" --value "enabled" --type "String" --overwrite

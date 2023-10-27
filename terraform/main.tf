@@ -3,7 +3,7 @@ locals {
 }
 
 module "container" {
-  source          = "git::https://github.com/cloudposse/terraform-aws-ecs-container-definition.git?ref=tags/0.61.0"
+  source          = "git::https://github.com/cloudposse/terraform-aws-ecs-container-definition.git?ref=tags/0.61.1"
   container_name  = local.app_name
   container_image = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
   essential       = true
@@ -97,4 +97,24 @@ module "deploy" {
   ignore_changes_task_definition = false
   redeploy_on_apply              = false
   force_new_deployment           = false
+}
+
+data "aws_ecs_service" "this" {
+  service_name = "hmpps-${var.environment}-delius-jitbit"
+  cluster_arn  = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}"
+}
+
+resource "aws_ssm_parameter" "ecs_scaling_state" {
+  name  = "/ecs/service/hmpps-${var.environment}-${local.app_name}/scaling-state"
+  type  = "String"
+  value = "disabled"
+  lifecycle {
+    ignore_changes = [
+      value
+    ]
+  }
+}
+
+data "aws_ssm_parameter" "ecs_scaling_state" {
+  name = aws_ssm_parameter.ecs_scaling_state.name
 }
