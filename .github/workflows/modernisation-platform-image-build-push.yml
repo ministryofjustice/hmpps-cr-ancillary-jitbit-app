@@ -10,7 +10,7 @@ on:
       - '.github/workflows/modernisation-platform-image-build-push.yml'
 
 env:
-  JITBIT_APP_VERSION: "10.19"
+  JITBIT_APP_VERSION: "10.14"
 
 jobs:
   build-image:

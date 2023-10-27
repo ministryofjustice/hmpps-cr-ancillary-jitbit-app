@@ -1,16 +1,21 @@
 name: Scale Jitbit ECS Service up
 on:
   schedule:
-    - cron:  '0 5 * * 1-5' # every weekday at 6am BST, 5am UTC
+    - cron:  '00 05 * * 1-5' # every weekday at 5am UTC
+  workflow_dispatch:
 
 jobs:
   scale-up-ecs-env:
+    permissions:
+        id-token: write
+        contents: read
     strategy:
       matrix:
-        environment: ["development"]
+        environment: ["development", "test"]
 #        environment: ["development", "test", "preproduction"]
     uses: ./.github/workflows/scale-ecs-env.yml
     with:
         environment: ${{ matrix.environment }}
         action: up
+    secrets: inherit
           
