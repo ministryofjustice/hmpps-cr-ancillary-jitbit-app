@@ -6,11 +6,7 @@ on:
       - main
     types: [opened, edited, reopened, synchronize, closed]
     paths:
-      - 'docker/Dockerfile'
-      - '.github/workflows/modernisation-platform-image-build-push.yml'
-
-env:
-  JITBIT_APP_VERSION: "10.14"
+      - 'docker/**'
 
 jobs:
   build-image:
@@ -32,6 +28,9 @@ jobs:
           role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
           aws-region: "eu-west-2"
       
+      - name: Set Jibit app version
+        run: echo JITBIT_APP_VERSION="$(cat ./docker/jitbit_version)" >> $GITHUB_ENV
+
       - name: Cache app files
         id: app-files
         uses: actions/cache@v3
