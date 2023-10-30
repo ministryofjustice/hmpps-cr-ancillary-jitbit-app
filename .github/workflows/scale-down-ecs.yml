@@ -1,7 +1,7 @@
 name: Scale Jitbit ECS Service down
 on:
   schedule:
-    - cron:  '00 20 * * 1-5' # every weekday at 20:00 UTC
+    - cron:  '00 21 * * 1-5' # every weekday at 21:00 UTC
   workflow_dispatch:
 
 # use matrix to run the same job for multiple environments
@@ -12,8 +12,7 @@ jobs:
         contents: read
     strategy:
       matrix:
-        environment: ["development", "test"]
-#        environment: ["development", "test", "preproduction"]
+        environment: ["development", "test", "preproduction"]
     uses: ./.github/workflows/scale-ecs-env.yml
     with:
         environment: ${{ matrix.environment }}
