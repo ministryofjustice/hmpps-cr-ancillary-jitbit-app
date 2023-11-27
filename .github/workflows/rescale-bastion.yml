@@ -13,8 +13,8 @@ on:
         - preproduction
         - production
 jobs:
-  restart-jitbit:
-    name: Restart Jitbit - ${{ inputs.environment }}
+  scale-bastion:
+    name: Bastion scale temp adjustment in ${{ inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
@@ -28,6 +28,7 @@ jobs:
       - name: Scale auto scaling group
         run: |
           aws autoscaling set-desired-capacity --auto-scaling-group-name bastion_linux_daily --desired-capacity 1
+          aws autoscaling put-scheduled-update-group-action --scheduled-action-name bastion_linux_scale_down  --auto-scaling-group-name bastion_linux_daily --max-size 1 --min-size 1 --desired-capacity 1 --recurrence "0 21 * * *"
 
       - name: Wait for bastion to scale
         run: |
