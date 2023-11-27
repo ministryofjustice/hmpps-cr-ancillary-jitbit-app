@@ -1,4 +1,4 @@
-name: Modernisation Platform Restart Service
+name: Disable Bastion scaling
 on:
   workflow_dispatch:
     inputs:
