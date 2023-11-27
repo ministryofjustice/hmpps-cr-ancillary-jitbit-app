@@ -1,0 +1,36 @@
+name: Modernisation Platform Restart Service
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to scale bastion in'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+        - development
+        - test
+        - preproduction
+        - production
+jobs:
+  scale-bastion:
+    name: Bastion scale temp adjustment in ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.CICD_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.CICD_SECRET_ACCESS_KEY }}
+          aws-region: "eu-west-2"
+
+      - name: Scale auto scaling group
+        run: |
+          aws autoscaling set-desired-capacity --auto-scaling-group-name bastion_linux_daily --desired-capacity 1
+          aws autoscaling put-scheduled-update-group-action --scheduled-action-name bastion_linux_scale_down  --auto-scaling-group-name bastion_linux_daily --max-size 1 --min-size 1 --desired-capacity 1 --recurrence "0 21 * * *"
+
+      - name: Wait for bastion to scale
+        run: |
+            aws autoscaling wait instance-in-service --auto-scaling-group-name bastion_linux_daily
+          
