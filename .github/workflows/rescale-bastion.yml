@@ -29,7 +29,7 @@ jobs:
 
       - name: Scale auto scaling group
         run: |
-          aws autoscaling put-scheduled-update-group-action --auto-scaling-group-name bastion_linux_daily --scheduled-action-name bastion_linux_scale_down --min-size 1 --max-size 1 --desired-capacity 1
-          aws autoscaling put-scheduled-update-group-action --auto-scaling-group-name bastion_linux_daily --scheduled-action-name bastion_linux_scale_up --min-size 1 --max-size 1 --desired-capacity 1
+          aws autoscaling put-scheduled-update-group-action --auto-scaling-group-name bastion_linux_daily --scheduled-action-name bastion_linux_scale_down --min-size 1 --max-size 1 --desired-capacity 1 --recurrence "0 21 * * *"
+          aws autoscaling put-scheduled-update-group-action --auto-scaling-group-name bastion_linux_daily --scheduled-action-name bastion_linux_scale_up --min-size 1 --max-size 1 --desired-capacity 1  --recurrence "0 05 * * *"
           aws autoscaling set-desired-capacity --auto-scaling-group-name bastion_linux_daily --desired-capacity 1
           
