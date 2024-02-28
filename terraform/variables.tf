@@ -20,7 +20,13 @@ variable "target_group_name" {
 variable "image_tag" {
   type        = string
   default     = "latest"
-  description = "Version of the application image to deploy"
+  description = "Version of the application image to deploy - use latest or a specific sha"
+}
+
+variable "jitbit_version" {
+  type        = string
+  default     = "latest"
+  description = "Version of the jitbit application to deploy"
 }
 
 variable "s3_bucket_name" {

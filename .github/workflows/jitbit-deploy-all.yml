@@ -1,0 +1,30 @@
+name: Modernisation Platform Image Build and Push
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    types: [opened, edited, reopened, synchronize, closed]
+    paths:
+      - 'docker/**'
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/jitbit-deploy.yml
+    strategy:
+      matrix:
+        include:
+          # - environment: sandbox
+          #   image_tag: 10.19-latest
+          - environment: development
+            image_tag: 10.19-latest
+          - environment: preproduction
+            image_tag: 10.19-latest
+          - environment: production
+            image_tag: 10.19-latest
+          - environment: test
+            image_tag: 10.19-latest
+    with:
+      environment: ${{ matrix.environment }}
+      image_tag: ${{ matrix.image_tag }}
+    secrets: inherit

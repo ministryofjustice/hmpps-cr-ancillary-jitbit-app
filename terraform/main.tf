@@ -5,7 +5,7 @@ locals {
 module "container" {
   source          = "git::https://github.com/cloudposse/terraform-aws-ecs-container-definition.git?ref=tags/0.61.1"
   container_name  = local.app_name
-  container_image = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
+  container_image = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.jitbit_version}-${var.image_tag}"
   essential       = true
   container_definition = {
     initProcessEnabled = true

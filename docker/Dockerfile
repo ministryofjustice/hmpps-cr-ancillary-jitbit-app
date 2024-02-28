@@ -22,7 +22,7 @@ ARG JITBIT_APP_DIR="app"
 ENV DOTNET_URLS=http://+:5000
 
 # COPY in app
-COPY $JITBIT_APP_DIR /jitbit
+COPY ./app /jitbit
 
 # Set user
 RUN adduser --disabled-password appuser -u 1001 && \
