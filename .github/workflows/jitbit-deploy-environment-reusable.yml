@@ -1,4 +1,4 @@
-name: Modernisation Platform Image Deploy
+name: "Resuable: deploy to an env"
 on:
   workflow_call:
     inputs:
