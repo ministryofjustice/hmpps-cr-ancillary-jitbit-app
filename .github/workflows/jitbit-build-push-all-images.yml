@@ -1,0 +1,22 @@
+name: Modernisation Platform Image Build and Push
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    types: [opened, edited, reopened, synchronize, closed]
+    paths:
+      - 'docker/**'
+
+jobs:
+  build-image:
+    permissions:
+        id-token: write
+        contents: read
+    strategy: 
+        matrix:
+            jitbit_version: ["10.14", "10.19"]
+    uses: ./.github/workflows/jitbit-build-image.yml
+    with:
+      jitbit_version: ${{ matrix.jitbit_version }}
+      

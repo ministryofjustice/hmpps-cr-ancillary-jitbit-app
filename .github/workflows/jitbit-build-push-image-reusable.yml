@@ -1,13 +1,13 @@
 name: Modernisation Platform Image Build and Push
 on:
   workflow_dispatch:
-  pull_request:
-    branches:
-      - main
-    types: [opened, edited, reopened, synchronize, closed]
-    paths:
-      - 'docker/**'
-
+    inputs:
+      jitbit_version:
+        type: string
+  workflow_call:
+    inputs:
+      jitbit_version:
+        type: string
 jobs:
   build-image:
     name: Build Image
@@ -27,9 +27,6 @@ jobs:
           role-to-assume: "arn:aws:iam::${{ vars.IMG_BUILD_PUSH_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
           role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
           aws-region: "eu-west-2"
-      
-      - name: Set Jibit app version
-        run: echo JITBIT_APP_VERSION="$(cat ./docker/jitbit_version)" >> $GITHUB_ENV
 
       - name: Cache app files
         id: app-files
@@ -97,7 +94,7 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
   
-  publish-image:
+  push-image:
     name: Publish image
     needs: [build-image, scan-image]
     permissions:
@@ -111,18 +108,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - name: Bump version and push tag
-        id: bump-version
-        uses: anothrNick/github-tag-action@1.67.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: false
-          DEFAULT_BUMP: minor # Making this default visible
-          INITIAL_VERSION: 10.14.0 # Making this default visible
-          TAG_CONTEXT: repo # Making this default visible
-          PRERELEASE: ${{ github.base_ref != 'refs/heads/main' }}
-          PRERELEASE_SUFFIX: ${{ github.base_ref }} # Branch name
       
       - name: Download Artifact
         uses: actions/download-artifact@v3
@@ -134,53 +119,21 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4.0.1
         with:
           role-to-assume: "arn:aws:iam::${{ vars.IMG_BUILD_PUSH_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
-          role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
+          role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_id }}-${{ github.run_attempt }}"
           aws-region: "eu-west-2"
 
-      - name: Load and retag image for publish
+      - name: Load image and tag
         run: |
           docker load --input /tmp/jitbit.tar
           docker tag \
-            delius-jitbit-ecr-repo:${{ github.sha }} \
-            ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.bump-version.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')
+            delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }}\
+            ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ github.event.inputs.jitbit_version }}-latest
+          docker tag \
+           delius-jitbit-ecr-repo:${{ github.sha }} \
+           ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ github.event.inputs.jitbit_version }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Login to ECR
         run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
-      - name: Publish image
-        run: docker push ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:$(echo ${{ steps.bump-version.outputs.new_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')
-
-  deploy-image-development:
-    uses: ./.github/workflows/modernisation-platform-image-deploy.yml
-    needs: [build-image, scan-image, "publish-image"]
-    with:
-      environment: development
-      image_tag: ${{ needs.publish-image.outputs.new_tag }}
-    secrets: inherit
-
-  deploy-image-preproduction:
-    if: ${{ github.ref == 'refs/heads/main' || github.event.pull_request.merged == true }}
-    needs: [build-image, scan-image, "publish-image"]
-    uses: ./.github/workflows/modernisation-platform-image-deploy.yml
-    with:
-      environment: preproduction
-      image_tag: ${{ needs.publish-image.outputs.new_tag }}
-    secrets: inherit
-
-  deploy-image-production:
-    if: ${{ github.ref == 'refs/heads/main' || github.event.pull_request.merged == true }}
-    needs: [build-image, scan-image, "publish-image"]
-    uses: ./.github/workflows/modernisation-platform-image-deploy.yml
-    with:
-      environment: production
-      image_tag: ${{ needs.publish-image.outputs.new_tag }}
-    secrets: inherit
-
-  deploy-image-test:
-    if: ${{ github.ref == 'refs/heads/main' || github.event.pull_request.merged == true }}
-    needs: [build-image, scan-image, "publish-image"]
-    uses: ./.github/workflows/modernisation-platform-image-deploy.yml
-    with:
-      environment: test
-      image_tag: ${{ needs.publish-image.outputs.new_tag }}
-    secrets: inherit
+      - name: Push image to ECR latest
+        run: docker push --all-tags ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo

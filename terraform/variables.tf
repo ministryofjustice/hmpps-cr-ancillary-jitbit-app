@@ -17,10 +17,16 @@ variable "target_group_name" {
   description = "Name of the target group to register the service with"
 }
 
-variable "image_tag" {
+variable "image_version" {
   type        = string
   default     = "latest"
-  description = "Version of the application image to deploy"
+  description = "Version of the application image to deploy - use latest or a specific id"
+}
+
+variable "jitbit_version" {
+  type        = string
+  default     = "latest"
+  description = "Version of the jitbit application to deploy"
 }
 
 variable "s3_bucket_name" {
