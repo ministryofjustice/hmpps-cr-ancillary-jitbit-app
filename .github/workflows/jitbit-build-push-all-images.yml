@@ -20,4 +20,5 @@ jobs:
     uses: ./.github/workflows/jitbit-build-push-image-reusable.yml
     with:
       jitbit_version: ${{ matrix.jitbit_version }}
+    secrets: inherit
       
