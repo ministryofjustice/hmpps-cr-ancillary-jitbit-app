@@ -50,7 +50,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./docker
-          tags: delius-jitbit-ecr-repo:${{ github.sha }}
+          tags: delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }}
           outputs: type=docker,dest=/tmp/jitbit-image-${{ inputs.jitbit_version }}.tar
           push: false
           cache-from: type=gha
@@ -112,7 +112,7 @@ jobs:
       - name: Download Artifact
         uses: actions/download-artifact@v3
         with:
-          name: jitbit-image
+          name: jitbit-image-${{ inputs.jitbit_version }}
           path: /tmp
 
       - name: Configure AWS Credentials
@@ -124,12 +124,12 @@ jobs:
 
       - name: Load image and tag
         run: |
-          docker load --input /tmp/jitbit.tar
+          docker load --input /tmp/jitbit-image-${{ inputs.jitbit_version }}.tar
           docker tag \
             delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }}\
             ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-latest
           docker tag \
-           delius-jitbit-ecr-repo:${{ github.sha }} \
+           delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }} \
            ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Login to ECR
