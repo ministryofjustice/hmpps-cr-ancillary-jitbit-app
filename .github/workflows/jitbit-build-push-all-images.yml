@@ -1,4 +1,4 @@
-name: Modernisation Platform Image Build and Push
+name: Build all Jitbit versions
 on:
   workflow_dispatch:
   pull_request:
