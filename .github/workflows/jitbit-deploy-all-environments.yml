@@ -1,4 +1,4 @@
-name: Modernisation Platform Image Build and Push
+name: Trigger deployments
 on:
   workflow_dispatch:
   pull_request:
