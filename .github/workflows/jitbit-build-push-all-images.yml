@@ -16,7 +16,7 @@ jobs:
     strategy: 
         matrix:
             jitbit_version: ["10.14", "10.19"]
-    uses: ./.github/workflows/jitbit-build-image.yml
+    uses: ./.github/workflows/jitbit-build-push-image-reusable.yml
     with:
       jitbit_version: ${{ matrix.jitbit_version }}
       
