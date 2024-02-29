@@ -94,7 +94,7 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
   
-  pushimage:
+  push-image:
     name: Publish image
     needs: [build-image, scan-image]
     permissions:
