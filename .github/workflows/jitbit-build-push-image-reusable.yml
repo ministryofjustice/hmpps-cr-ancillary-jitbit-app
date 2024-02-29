@@ -33,13 +33,13 @@ jobs:
         uses: actions/cache@v3
         with:
           path: docker/app
-          key: "${{ runner.os }}-${{ env.JITBIT_APP_VERSION }}"
+          key: "${{ github.run_id }}-${{ inputs.jitbit_version }}"
 
       - name: Pull down S3 app files if not cached
         if: steps.app-files.outputs.cache-hit != 'true'
         run: |
           aws s3 cp \
-            s3://${{ secrets.MP_SOFTWARE_BUCKET }}/delius-jitbit/app/HelpDesk_${{env.JITBIT_APP_VERSION}} \
+            s3://${{ secrets.MP_SOFTWARE_BUCKET }}/delius-jitbit/app/HelpDesk_${{ inputs.jitbit_version }} \
             docker/app  \
             --recursive
 
@@ -127,10 +127,10 @@ jobs:
           docker load --input /tmp/jitbit.tar
           docker tag \
             delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }}\
-            ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ github.event.inputs.jitbit_version }}-latest
+            ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-latest
           docker tag \
            delius-jitbit-ecr-repo:${{ github.sha }} \
-           ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ github.event.inputs.jitbit_version }}-${{ github.run_id }}-${{ github.run_attempt }}
+           ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Login to ECR
         run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
