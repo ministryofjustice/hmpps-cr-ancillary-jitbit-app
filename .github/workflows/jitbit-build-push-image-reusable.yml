@@ -33,7 +33,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: docker/app
-          key: "${{ github.run_id }}-${{ inputs.jitbit_version }}"
+          key: "${{ inputs.jitbit_version }}"
 
       - name: Pull down S3 app files if not cached
         if: steps.app-files.outputs.cache-hit != 'true'
@@ -51,7 +51,7 @@ jobs:
         with:
           context: ./docker
           tags: delius-jitbit-ecr-repo:${{ github.sha }}
-          outputs: type=docker,dest=/tmp/jitbit.tar
+          outputs: type=docker,dest=/tmp/jitbit-image-${{ inputs.jitbit_version }}.tar
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -59,8 +59,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: jitbit-image
-          path: /tmp/jitbit.tar
+          name: jitbit-image-${{ inputs.jitbit_version }}
+          path: /tmp/jitbit-image-${{ inputs.jitbit_version }}.tar
           retention-days: 1
 
   scan-image:
@@ -73,12 +73,12 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v3
         with:
-          name: jitbit-image
+          name: jitbit-image-${{ inputs.jitbit_version }}
           path: /tmp
 
       - name: Load image
         run: |
-          docker load --input /tmp/jitbit.tar
+          docker load --input /tmp/jitbit-image-${{ inputs.jitbit_version }}.tar
 
       - name: Trivy scan
         uses: aquasecurity/trivy-action@fbd16365eb88e12433951383f5e99bd901fc618f
