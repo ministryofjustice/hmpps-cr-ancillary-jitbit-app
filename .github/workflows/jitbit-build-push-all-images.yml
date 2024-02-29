@@ -12,7 +12,7 @@ jobs:
   build-image:
     permissions:
         id-token: write
-        contents: read
+        contents: write
         security-events: write
     strategy: 
         matrix:
