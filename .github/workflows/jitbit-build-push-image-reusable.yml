@@ -85,7 +85,7 @@ jobs:
         with:
           format: 'sarif'
           severity: 'MEDIUM,HIGH,CRITICAL'
-          image-ref: 'delius-jitbit-ecr-repo:${{ github.sha }}'
+          image-ref: 'delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }}'
           exit-code: '1'
           output: 'trivy-results.sarif'
       - name: Upload Trivy scan results to GitHub Security tab
