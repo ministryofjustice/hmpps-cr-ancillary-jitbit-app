@@ -13,6 +13,7 @@ jobs:
     permissions:
         id-token: write
         contents: read
+        security-events: write
     strategy: 
         matrix:
             jitbit_version: ["10.14", "10.19"]
