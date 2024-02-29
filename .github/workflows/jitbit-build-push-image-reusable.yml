@@ -1,4 +1,4 @@
-name: Modernisation Platform Image Build and Push
+name: "Reusable: build push an image"
 on:
   workflow_dispatch:
     inputs:
