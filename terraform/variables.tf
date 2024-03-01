@@ -7,8 +7,8 @@ variable "environment" {
   type        = string
   description = "Environment name"
   validation {
-    condition     = contains(["development", "test", "preproduction", "production"], var.environment)
-    error_message = "Valid values for environment are (development, test, preproduction, production)"
+    condition     = contains(["sandbox", "development", "test", "preproduction", "production"], var.environment)
+    error_message = "Valid values for environment are (sandbox, development, test, preproduction, production)"
   }
 }
 
