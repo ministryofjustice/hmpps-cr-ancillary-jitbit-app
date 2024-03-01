@@ -1,4 +1,4 @@
-name: Modernisation Platform Image Build and Push
+name: "Reusable: build push an image"
 on:
   workflow_dispatch:
     inputs:
@@ -33,25 +33,25 @@ jobs:
         uses: actions/cache@v3
         with:
           path: docker/app
-          key: "${{ runner.os }}-${{ env.JITBIT_APP_VERSION }}"
+          key: "${{ inputs.jitbit_version }}"
 
       - name: Pull down S3 app files if not cached
         if: steps.app-files.outputs.cache-hit != 'true'
         run: |
           aws s3 cp \
-            s3://${{ secrets.MP_SOFTWARE_BUCKET }}/delius-jitbit/app/HelpDesk_${{env.JITBIT_APP_VERSION}} \
+            s3://${{ secrets.MP_SOFTWARE_BUCKET }}/delius-jitbit/app/HelpDesk_${{ inputs.jitbit_version }} \
             docker/app  \
             --recursive
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Build image and export
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: ./docker
-          tags: delius-jitbit-ecr-repo:${{ github.sha }}
-          outputs: type=docker,dest=/tmp/jitbit.tar
+          tags: delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }}
+          outputs: type=docker,dest=/tmp/jitbit-image-${{ inputs.jitbit_version }}.tar
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -59,8 +59,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: jitbit-image
-          path: /tmp/jitbit.tar
+          name: jitbit-image-${{ inputs.jitbit_version }}
+          path: /tmp/jitbit-image-${{ inputs.jitbit_version }}.tar
           retention-days: 1
 
   scan-image:
@@ -73,19 +73,19 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v3
         with:
-          name: jitbit-image
+          name: jitbit-image-${{ inputs.jitbit_version }}
           path: /tmp
 
       - name: Load image
         run: |
-          docker load --input /tmp/jitbit.tar
+          docker load --input /tmp/jitbit-image-${{ inputs.jitbit_version }}.tar
 
       - name: Trivy scan
         uses: aquasecurity/trivy-action@fbd16365eb88e12433951383f5e99bd901fc618f
         with:
           format: 'sarif'
           severity: 'MEDIUM,HIGH,CRITICAL'
-          image-ref: 'delius-jitbit-ecr-repo:${{ github.sha }}'
+          image-ref: 'delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }}'
           exit-code: '1'
           output: 'trivy-results.sarif'
       - name: Upload Trivy scan results to GitHub Security tab
@@ -105,14 +105,14 @@ jobs:
       new_tag: ${{ steps.bump-version.outputs.new_tag }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       
       - name: Download Artifact
         uses: actions/download-artifact@v3
         with:
-          name: jitbit-image
+          name: jitbit-image-${{ inputs.jitbit_version }}
           path: /tmp
 
       - name: Configure AWS Credentials
@@ -124,18 +124,16 @@ jobs:
 
       - name: Load image and tag
         run: |
-          docker load --input /tmp/jitbit.tar
+          docker load --input /tmp/jitbit-image-${{ inputs.jitbit_version }}.tar
           docker tag \
             delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }}\
-            ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ github.event.inputs.jitbit_version }}-latest
+            ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-latest
           docker tag \
-           delius-jitbit-ecr-repo:${{ github.sha }} \
-           ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ github.event.inputs.jitbit_version }}-${{ github.run_id }}-${{ github.run_attempt }}
+           delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }} \
+           ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Login to ECR
         run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
       - name: Push image to ECR latest
         run: docker push --all-tags ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo
-
-      - name: 
