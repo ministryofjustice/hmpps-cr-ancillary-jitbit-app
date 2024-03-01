@@ -12,6 +12,7 @@ jobs:
   deploy:
     uses: ./.github/workflows/jitbit-deploy-environment-reusable.yml
     strategy:
+      fail-fast: false
       matrix:
         include:
           - environment: sandbox
