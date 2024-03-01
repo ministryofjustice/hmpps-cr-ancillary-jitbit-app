@@ -17,13 +17,13 @@ jobs:
           - environment: sandbox
             image_tag: 10.19-latest
           - environment: development
-            image_tag: 10.19-latest
+            image_tag: 0.51.0
           - environment: preproduction
-            image_tag: 10.19-latest
+            image_tag: 0.48.0
           - environment: production
-            image_tag: 10.19-latest
+            image_tag: 0.48.0
           - environment: test
-            image_tag: 10.19-latest
+            image_tag: 0.51.0
     with:
       environment: ${{ matrix.environment }}
       image_tag: ${{ matrix.image_tag }}
