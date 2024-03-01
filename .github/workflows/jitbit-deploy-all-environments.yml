@@ -10,7 +10,7 @@ on:
 
 jobs:
   deploy:
-    uses: ./.github/workflows/jitbit-deploy.yml
+    uses: ./.github/workflows/jitbit-deploy-all-environments.yml
     strategy:
       matrix:
         include:
