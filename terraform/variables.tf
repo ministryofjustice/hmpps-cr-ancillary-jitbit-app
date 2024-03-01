@@ -12,6 +12,12 @@ variable "environment" {
   }
 }
 
+variable "suffix" {
+  type        = string
+  description = "optional suffix for nonstandard environments"
+  default     = ""
+}
+
 variable "target_group_name" {
   type        = string
   description = "Name of the target group to register the service with"
@@ -20,13 +26,7 @@ variable "target_group_name" {
 variable "image_version" {
   type        = string
   default     = "latest"
-  description = "Version of the application image to deploy - use latest or a specific id"
-}
-
-variable "jitbit_version" {
-  type        = string
-  default     = "latest"
-  description = "Version of the jitbit application to deploy"
+  description = "Tag of the application image to deploy - use suffix of latest or a specific id"
 }
 
 variable "s3_bucket_name" {

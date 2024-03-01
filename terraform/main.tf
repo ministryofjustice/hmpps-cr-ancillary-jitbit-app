@@ -1,5 +1,5 @@
 locals {
-  app_name = "delius-jitbit"
+  app_name = "delius-jitbit${var.suffix}"
 }
 
 module "container" {

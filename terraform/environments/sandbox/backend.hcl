@@ -1,1 +1,1 @@
-bucket = "delius-jitbit-development-deployment"
+bucket = "delius-jitbit-sandbox-deployment"
