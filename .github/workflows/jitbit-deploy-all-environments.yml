@@ -14,8 +14,8 @@ jobs:
     strategy:
       matrix:
         include:
-          # - environment: sandbox
-          #   image_tag: 10.19-latest
+          - environment: sandbox
+            image_tag: 10.19-latest
           - environment: development
             image_tag: 10.19-latest
           - environment: preproduction
