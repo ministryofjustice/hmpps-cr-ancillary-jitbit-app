@@ -1,4 +1,4 @@
-name: Build all Jitbit versions
+name: Build images for all Jitbit versions
 on:
   workflow_dispatch:
   pull_request:
