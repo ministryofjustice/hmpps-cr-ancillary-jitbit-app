@@ -23,7 +23,7 @@ variable "target_group_name" {
   description = "Name of the target group to register the service with"
 }
 
-variable "image_version" {
+variable "image_tag" {
   type        = string
   default     = "latest"
   description = "Tag of the application image to deploy - use suffix of latest or a specific id"
