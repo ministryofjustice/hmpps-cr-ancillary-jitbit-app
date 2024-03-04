@@ -48,7 +48,7 @@ jobs:
           aws-region: "eu-west-2"
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "${{ inputs.terraform_version }}"
           terraform_wrapper: false
@@ -96,7 +96,7 @@ jobs:
           aws-region: "eu-west-2"
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "${{ inputs.terraform_version }}"
           terraform_wrapper: false
