@@ -28,7 +28,7 @@ module "container" {
   log_configuration = {
     logDriver = "awslogs"
     options = {
-      "awslogs-group"         = "${local.app_name}${var.suffix}-app"
+      "awslogs-group"         = "${local.app_name}${var.suffix}-ecs"
       "awslogs-region"        = data.aws_region.current.name
       "awslogs-stream-prefix" = "jitbit"
     }
