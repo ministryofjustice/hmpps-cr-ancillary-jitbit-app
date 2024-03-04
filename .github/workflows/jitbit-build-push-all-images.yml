@@ -7,6 +7,10 @@ on:
     types: [opened, edited, reopened, synchronize, closed]
     paths:
       - 'docker/**'
+      - '.github/workflows/jitbit-build-push-image-reusable.yml'
+      - '.github/workflows/jitbit-build-push-all-images.yml'
+      - '.github/workflows/jitbit-deploy-all-environments.yml'
+      - '.github/workflows/jitbit-deploy-environment-reusable.yml'
 
 jobs:
   build-image:
