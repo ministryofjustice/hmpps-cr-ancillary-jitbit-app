@@ -27,7 +27,7 @@ data "aws_lb_target_group" "service" {
 }
 
 data "aws_secretsmanager_secret" "connection_string" {
-  name = "${local.app_name}-app-connection-string"
+  name = "${local.app_name}-app-connection-string${var.suffix}"
 }
 
 data "aws_secretsmanager_secret" "s3_user_access_key" {
