@@ -1,4 +1,4 @@
-name: "Resuable: deploy to an env"
+name: "Resuable: Deploy to a single env"
 on:
   workflow_call:
     inputs:
@@ -67,8 +67,8 @@ jobs:
           set -o pipefail
           exitcode=0
           tfargs="-detailed-exitcode"
-          echo "terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=$(echo ${{ inputs.image_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')" $tfargs | tee tfplan.txt || exitcode=$?"
-          terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=$(echo ${{ inputs.image_tag }} | sed 's/[^a-zA-Z0-9.]/-/g')" $tfargs | tee tfplan.txt || exitcode=$?
+          echo "terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=${{ inputs.image_tag }}" $tfargs | tee tfplan.txt || exitcode=$?"
+          terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=${{ inputs.image_tag }}" $tfargs | tee tfplan.txt || exitcode=$?
           echo "exitcode=${exitcode}"  # 0=clean plan, 1=error, 2=stuff in plan
           echo "exitcode=${exitcode}" >> $GITHUB_OUTPUT
           (( exitcode == 1 )) && exit 1 || exit 0

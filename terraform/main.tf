@@ -1,10 +1,10 @@
 locals {
-  app_name = "delius-jitbit${var.suffix}"
+  app_name = "delius-jitbit"
 }
 
 module "container" {
   source          = "git::https://github.com/cloudposse/terraform-aws-ecs-container-definition.git?ref=tags/0.61.1"
-  container_name  = local.app_name
+  container_name  = "${local.app_name}${var.suffix}"
   container_image = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
   essential       = true
   container_definition = {
@@ -28,7 +28,7 @@ module "container" {
   log_configuration = {
     logDriver = "awslogs"
     options = {
-      "awslogs-group"         = "${local.app_name}-app"
+      "awslogs-group"         = "${local.app_name}${var.suffix}-app"
       "awslogs-region"        = data.aws_region.current.name
       "awslogs-stream-prefix" = "jitbit"
     }
@@ -63,8 +63,8 @@ module "container" {
 module "deploy" {
   source                    = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=v3.0.0"
   container_definition_json = module.container.json_map_encoded_list
-  ecs_cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}"
-  name                      = local.app_name
+  ecs_cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}"
+  name                      = "${local.app_name}${var.suffix}"
   vpc_id                    = var.vpc_id
 
   launch_type  = "FARGATE"
@@ -106,13 +106,13 @@ module "deploy" {
   force_new_deployment           = false
 }
 
-data "aws_ecs_service" "this" {
-  service_name = "hmpps-${var.environment}-delius-jitbit"
-  cluster_arn  = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}"
-}
+# data "aws_ecs_service" "this" {
+#   service_name = "hmpps-${var.environment}-delius-jitbit${var.suffix}"
+#   cluster_arn  = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}"
+# }
 
 resource "aws_ssm_parameter" "ecs_scaling_state" {
-  name  = "/ecs/service/hmpps-${var.environment}-${local.app_name}/scaling-state"
+  name  = "/ecs/service/hmpps-${var.environment}-${local.app_name}${var.suffix}/scaling-state"
   type  = "String"
   value = "disabled"
   lifecycle {

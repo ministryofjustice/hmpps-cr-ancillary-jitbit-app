@@ -1,4 +1,4 @@
-name: "Reusable: build push an image"
+name: "Reusable: Build push an image"
 on:
   workflow_dispatch:
     inputs:
