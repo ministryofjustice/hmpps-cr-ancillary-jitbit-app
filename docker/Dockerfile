@@ -18,6 +18,8 @@ RUN cp /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # Set jitbit app directory
 ARG JITBIT_APP_DIR="app"
 
+RUN echo "JITBIT_APP"
+
 # Ensure we listen on any URL
 ENV DOTNET_URLS=http://+:5000
 
