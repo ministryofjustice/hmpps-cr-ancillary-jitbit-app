@@ -127,7 +127,7 @@ jobs:
             docker load --input /tmp/jitbit-image-${{ inputs.jitbit_version }}.tar
 
       - name: Tag image with latest
-        if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.base_ref == 'refs/heads/main') || github.event.ref == 'refs/heads/main'
+        if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) || github.event.ref == 'refs/heads/main'
         run: |
             docker tag delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }} ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-latest
 
@@ -138,12 +138,12 @@ jobs:
       - name: Login to ECR
         run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
-      - name: Push image to ECR latest
+      - name: Push images to ECR
         run: docker push --all-tags ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo
 
       - name: Output image tags created (run id)
         run: echo "${{ inputs.jitbit_version }}-${{ github.run_id }}-${{ github.run_attempt }}"
 
       - name: Output image tags created (latest)
-        if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.base_ref == 'refs/heads/main') || github.event.ref == 'refs/heads/main'
+        if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) || github.event.ref == 'refs/heads/main'
         run: echo "${{ inputs.jitbit_version }}-latest"
