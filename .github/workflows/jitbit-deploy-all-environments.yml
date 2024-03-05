@@ -23,6 +23,8 @@ jobs:
             image_tag: 0.48.0
           - environment: test
             image_tag: 0.51.0
+        exclude:
+          - environment: ${{(github.event_name == 'pull_request' || github.event.ref != 'refs/heads/main') && ('production' || 'preproduction' || 'test') }}
     with:
       environment: ${{ matrix.environment }}
       image_tag: ${{ matrix.image_tag }}
