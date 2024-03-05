@@ -36,6 +36,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) || github.event.ref == 'refs/heads/main' || inputs.environment == 'sandbox'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
