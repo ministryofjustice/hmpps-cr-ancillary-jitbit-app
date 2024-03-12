@@ -7,6 +7,7 @@ on:
         options:
           - "development"
           - "test"
+          - "preproduction"
       scaling-type:
         type: choice
         options:
