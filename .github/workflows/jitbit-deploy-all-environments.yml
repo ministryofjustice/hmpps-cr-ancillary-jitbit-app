@@ -14,7 +14,7 @@ jobs:
       matrix:
         include:
           - environment: sandbox
-            image_tag: 10.22-8266402939-1
+            image_tag: 10.22-8266836301-1
           - environment: development
             image_tag: 0.51.0
           - environment: preproduction
