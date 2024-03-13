@@ -3,12 +3,13 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine-amd64
 RUN apk update && \
   apk upgrade && \
   apk add ca-certificates && \
-  update-ca-certificates tzdata && \
+  update-ca-certificates && \
   rm -rf /var/cache/apk/*
 
 # Fix CVE-2023-2650, CVE-2023-1255
 RUN apk upgrade libssl3 libcrypto3
 
+RUN apk add tzdata
 # set timezone
 ENV TZ="Europe/London"
 RUN cp /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
