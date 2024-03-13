@@ -1,4 +1,4 @@
-FROM alpine:3.18
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine-amd64
 
 RUN apk update && \
   apk upgrade && \
