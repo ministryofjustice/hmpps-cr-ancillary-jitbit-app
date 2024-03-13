@@ -7,9 +7,7 @@ RUN apk update && \
   rm -rf /var/cache/apk/*
 
 # Fix CVE-2023-2650, CVE-2023-1255
-RUN apk upgrade libssl3 libcrypto3
-
-RUN apk add aspnetcore6-runtime tzdata
+RUN apk upgrade libssl3 libcrypto3 tzdata
 
 # set timezone
 ENV TZ="Europe/London"
