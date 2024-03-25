@@ -1,4 +1,4 @@
-FROM alpine:3.18
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine-amd64
 
 RUN apk update && \
   apk upgrade && \
@@ -9,11 +9,20 @@ RUN apk update && \
 # Fix CVE-2023-2650, CVE-2023-1255
 RUN apk upgrade libssl3 libcrypto3
 
-RUN apk add aspnetcore6-runtime tzdata
-
+RUN apk add tzdata
 # set timezone
 ENV TZ="Europe/London"
 RUN cp /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# see https://github.com/dotnet/dotnet-docker/blob/main/samples/enable-globalization.md
+ENV \
+  DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \
+  LC_ALL=en_US.UTF-8 \
+  LANG=en_US.UTF-8
+
+RUN apk add --no-cache \
+  icu-data-full \
+  icu-libs
 
 # Set jitbit app directory
 ARG JITBIT_APP_DIR="app"
