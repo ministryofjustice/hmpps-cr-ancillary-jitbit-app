@@ -71,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: jitbit-image-${{ inputs.jitbit_version }}
           path: /tmp
@@ -110,7 +110,7 @@ jobs:
           fetch-depth: 0
       
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: jitbit-image-${{ inputs.jitbit_version }}
           path: /tmp
