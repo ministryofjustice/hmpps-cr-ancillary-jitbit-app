@@ -57,7 +57,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: jitbit-image-${{ inputs.jitbit_version }}
           path: /tmp/jitbit-image-${{ inputs.jitbit_version }}.tar
