@@ -22,7 +22,7 @@ jobs:
           - environment: production
             image_tag: 10.23-latest
           - environment: test
-            image_tag: 0.51.0
+            image_tag: 10.23-latest
     with:
       environment: ${{ matrix.environment }}
       image_tag: ${{ matrix.image_tag }}
