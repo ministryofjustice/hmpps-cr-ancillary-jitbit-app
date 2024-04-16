@@ -20,9 +20,11 @@ on:
 
 jobs:
     change-rds-tag:
+        permissions:
+          id-token: write
         runs-on: ubuntu-latest
+        environment: ${{ inputs.environment }}
         steps:
-
         - name: Configure AWS Credentials
           uses: aws-actions/configure-aws-credentials@v4 
           with:
