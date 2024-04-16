@@ -35,4 +35,4 @@ jobs:
         - name: Set new tag on RDS instance
           run: |
             aws rds add-tags-to-resource \  --resource-name arn:aws:rds:eu-west-2:${{ vars.AWS_ACCOUNT_ID }}:db:delius-jitbit-${{ github.event.inputs.environment }}-database \
-            --tags instance-scheduling=${{ github.event.inputs.scaling-type }}
+            --tags Key="instance-scheduling",Value="${{ github.event.inputs.scaling-type }}"
