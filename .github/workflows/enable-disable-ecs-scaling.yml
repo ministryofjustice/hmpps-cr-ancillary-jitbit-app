@@ -31,4 +31,4 @@ jobs:
 
         - name: Set ssm parameter for ECS Service scaling state
           run: |
-            aws ssm put-parameter --name "/ecs/service/hmpps-${{ inputs.environment }}-delius-jitbit/scaling-state" --value "enabled" --type "String" --overwrite
+            aws ssm put-parameter --name "/ecs/service/hmpps-${{ inputs.environment }}-delius-jitbit/scaling-state" --value "${{ inputs.scaling-state }}" --type "String" --overwrite
