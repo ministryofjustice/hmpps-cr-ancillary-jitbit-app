@@ -3,7 +3,7 @@ locals {
 }
 
 module "container" {
-  source          = "git::https://github.com/cloudposse/terraform-aws-ecs-container-definition.git?ref=tags/0.61.1"
+  source          = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//container?ref=v4.2.0"
   container_name  = "${local.app_name}${var.suffix}"
   container_image = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
   essential       = true
