@@ -9,6 +9,10 @@ module "container" {
   essential = true
 
   linux_parameters = {
+    capabilities = {
+      add  = []
+      drop = []
+    }
     initProcessEnabled = true
   }
 
