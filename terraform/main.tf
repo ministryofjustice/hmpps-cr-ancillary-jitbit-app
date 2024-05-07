@@ -39,7 +39,7 @@ module "container" {
       "awslogs-stream-prefix" = "jitbit"
     }
   }
-  healthcheck = {
+  health_check = {
     command     = ["CMD-SHELL", "wget --spider --server-response http://localhost:5000/User/Login?ReturnURL=%2f 2>&1 | grep -q '200 OK' || exit 1"]
     interval    = 30
     retries     = 3
