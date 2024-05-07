@@ -3,10 +3,10 @@ locals {
 }
 
 module "container" {
-  source          = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//container?ref=v4.2.0"
-  name  = "${local.app_name}${var.suffix}"
-  image = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
-  essential       = true
+  source    = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//container?ref=v4.2.0"
+  name      = "${local.app_name}${var.suffix}"
+  image     = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
+  essential = true
 
   linux_parameters = object({
     initProcessEnabled = bool
@@ -28,7 +28,7 @@ module "container" {
     protocol      = "tcp"
   }]
 
-  mount_points  = []
+  mount_points             = []
   readonly_root_filesystem = false
 
   log_configuration = {
