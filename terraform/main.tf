@@ -70,7 +70,7 @@ module "deploy" {
   source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=v4.2.0"
   container_definitions = module.container.json_map_encoded_list
   cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}"
-  name                      = "${local.app_name}${var.suffix}"
+  name                  = "${local.app_name}${var.suffix}"
 
   task_cpu    = var.ecs_task_cpu
   task_memory = var.ecs_task_memory
@@ -96,14 +96,14 @@ module "deploy" {
 
   security_groups = [var.service_security_group_id]
 
-  subnets= [
+  subnets = [
     data.aws_subnet.private_subnets_a.id,
     data.aws_subnet.private_subnets_b.id,
     data.aws_subnet.private_subnets_c.id
   ]
 
-  ignore_changes        = false
-  force_new_deployment  = false
+  ignore_changes       = false
+  force_new_deployment = false
 }
 
 # data "aws_ecs_service" "this" {
