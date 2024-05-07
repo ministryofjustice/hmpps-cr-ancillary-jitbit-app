@@ -69,13 +69,8 @@ module "container" {
 module "deploy" {
   source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=v4.2.0"
   container_definitions = module.container.json_map_encoded_list
-  ecs_cluster_arn       = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}"
-  name                  = "${local.app_name}${var.suffix}"
-  vpc_id                = var.vpc_id
-
-  launch_type  = "FARGATE"
-  network_mode = "awsvpc"
-  namespace    = "hmpps"
+  cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}"
+  name                      = "${local.app_name}${var.suffix}"
 
   task_cpu    = var.ecs_task_cpu
   task_memory = var.ecs_task_memory
@@ -90,10 +85,8 @@ module "deploy" {
   task_role_arn      = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-task"
   task_exec_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/hmpps-${var.environment}-${local.app_name}-task-exec"
 
-  task_exec_policy_arns = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/jitbit-secrets-reader"]
-  exec_enabled          = true
-  environment           = var.environment
-  ecs_load_balancers = [
+  enable_execute_command = true
+  service_load_balancers = [
     {
       target_group_arn = data.aws_lb_target_group.service.arn
       container_name   = "${local.app_name}${var.suffix}"
@@ -101,17 +94,16 @@ module "deploy" {
     }
   ]
 
-  security_group_ids = [var.service_security_group_id]
+  security_groups = [var.service_security_group_id]
 
-  subnet_ids = [
+  subnets= [
     data.aws_subnet.private_subnets_a.id,
     data.aws_subnet.private_subnets_b.id,
     data.aws_subnet.private_subnets_c.id
   ]
 
-  ignore_changes_task_definition = false
-  redeploy_on_apply              = false
-  force_new_deployment           = false
+  ignore_changes        = false
+  force_new_deployment  = false
 }
 
 # data "aws_ecs_service" "this" {
