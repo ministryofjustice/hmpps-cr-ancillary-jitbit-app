@@ -8,9 +8,9 @@ module "container" {
   image     = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
   essential = true
 
-  linux_parameters = object({
+  linux_parameters = {
     initProcessEnabled = true
-  })
+  }
 
   environment = [
     {
