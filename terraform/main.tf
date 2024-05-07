@@ -9,7 +9,7 @@ module "container" {
   essential = true
 
   linux_parameters = object({
-    initProcessEnabled = bool
+    initProcessEnabled = true
   })
 
   environment = [
