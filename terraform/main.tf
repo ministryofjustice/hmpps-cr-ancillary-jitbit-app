@@ -4,12 +4,14 @@ locals {
 
 module "container" {
   source          = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//container?ref=v4.2.0"
-  container_name  = "${local.app_name}${var.suffix}"
-  container_image = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
+  name  = "${local.app_name}${var.suffix}"
+  image = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
   essential       = true
-  container_definition = {
-    initProcessEnabled = true
-  }
+
+  linux_parameters = object({
+    initProcessEnabled = bool
+  })
+
   environment = [
     {
       name  = "AttachmentsS3Bucket"
@@ -25,6 +27,10 @@ module "container" {
     hostPort      = 5000
     protocol      = "tcp"
   }]
+
+  mount_points  = []
+  readonly_root_filesystem = false
+
   log_configuration = {
     logDriver = "awslogs"
     options = {
