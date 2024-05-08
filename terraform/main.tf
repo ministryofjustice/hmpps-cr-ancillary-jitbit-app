@@ -1,10 +1,11 @@
 locals {
-  app_name = "delius-jitbit"
+  app_name       = "delius-jitbit"
+  container_name = "hmpps-${var.environment}-${local.app_name}${var.suffix}"
 }
 
 module "container" {
   source    = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//container?ref=ded50a0"
-  name      = "${local.app_name}${var.suffix}"
+  name      = local.container_name
   image     = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
   essential = true
 
@@ -93,7 +94,7 @@ module "deploy" {
   service_load_balancers = [
     {
       target_group_arn = data.aws_lb_target_group.service.arn
-      container_name   = "${local.app_name}${var.suffix}"
+      container_name   = local.container_name
       container_port   = 5000
     }
   ]
