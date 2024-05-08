@@ -39,7 +39,7 @@ module "container" {
   log_configuration = {
     logDriver = "awslogs"
     options = {
-      "awslogs-group"         = "${local.app_name}${var.suffix}-ecs"
+      "awslogs-group"         = "${local.container_name}-ecs"
       "awslogs-region"        = data.aws_region.current.name
       "awslogs-stream-prefix" = "jitbit"
     }
@@ -75,7 +75,7 @@ module "deploy" {
   source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=ded50a0"
   container_definitions = module.container.json_encoded_list
   cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}"
-  name                  = "${local.app_name}${var.suffix}"
+  name                  = local.container_name
 
   task_cpu    = var.ecs_task_cpu
   task_memory = var.ecs_task_memory
