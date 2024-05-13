@@ -4,7 +4,7 @@ locals {
 }
 
 module "container" {
-  source    = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//container?ref=ded50a0"
+  source    = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//container?ref=b19d811b79f8fbd55c9c8ea003870c72e145ffc4"
   name      = local.container_name
   image     = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
   essential = true
@@ -72,7 +72,7 @@ module "container" {
 }
 
 module "deploy" {
-  source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=ded50a0"
+  source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=b19d811b79f8fbd55c9c8ea003870c72e145ffc4"
   container_definitions = module.container.json_encoded_list
   cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}"
   name                  = local.container_name
