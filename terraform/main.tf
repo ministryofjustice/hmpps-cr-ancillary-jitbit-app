@@ -9,14 +9,6 @@ module "container" {
   image     = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
   essential = true
 
-  linux_parameters = {
-    capabilities = {
-      add  = []
-      drop = []
-    }
-    initProcessEnabled = true
-  }
-
   environment = [
     {
       name  = "AttachmentsS3Bucket"
@@ -110,11 +102,6 @@ module "deploy" {
   ignore_changes       = false
   force_new_deployment = false
 }
-
-# data "aws_ecs_service" "this" {
-#   service_name = "hmpps-${var.environment}-delius-jitbit${var.suffix}"
-#   cluster_arn  = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}"
-# }
 
 resource "aws_ssm_parameter" "ecs_scaling_state" {
   name  = "/ecs/service/hmpps-${var.environment}-${local.app_name}${var.suffix}/scaling-state"
