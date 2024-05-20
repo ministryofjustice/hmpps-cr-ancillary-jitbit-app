@@ -88,6 +88,7 @@ jobs:
           image-ref: 'delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }}'
           exit-code: '1'
           scan-type: 'image'
+          trivyignores: '.trivyignore'
           ignore-unfixed: 'true'
           output: 'trivy-results.sarif'
       - name: Upload Trivy scan results to GitHub Security tab
