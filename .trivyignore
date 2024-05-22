@@ -3,3 +3,9 @@
 CVE-2023-36435
 CVE-2023-38171
 CVE-2023-44487
+# zlib - fixed by installing zlib-dev from debian testing in https://github.com/ministryofjustice/hmpps-cr-ancillary-jitbit-app/pull/218 but trivy doesn't recognise this version
+CVE-2023-45853
+
+# two vulns coming from jitbit/HelpDesk.deps.json - check with app team
+CVE-2023-36414
+CVE-2024-0056

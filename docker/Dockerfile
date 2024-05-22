@@ -7,6 +7,13 @@ RUN apt-get update && \
   apt-get clean && \
   update-ca-certificates
 
+
+COPY ./debian-testing.sources /etc/apt/sources.list.d/debian-testing.sources
+COPY ./default-release /etc/apt/apt.conf.d/default-release
+COPY ./testing.pref /etc/apt/preferences.d/testing.pref
+
+RUN apt update && apt install -t testing zlib1g-dev -y
+
 # set timezone
 ENV TZ="Europe/London"
 RUN rm /etc/localtime && \
