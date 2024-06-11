@@ -8,6 +8,7 @@ on:
         default: 'development'
         type: choice
         options:
+        - sandbox
         - development
         - test
         - preproduction
@@ -23,6 +24,13 @@ jobs:
     env:
       SERVICE_TASK_NAME: hmpps-${{ inputs.environment }}-delius-jitbit
     steps:
+      - name: service/cluster string
+        run: |
+            if [ "${{ inputs.environment }}" = "sandbox" ]; then
+              echo "SERVICE_TASK_NAME=hmpps-development-delius-jitbit-${{ inputs.environment }}" >> $GITHUB_ENV
+            else
+              echo "SERVICE_TASK_NAME=hmpps-${{ inputs.environment }}-delius-jitbit" >> $GITHUB_ENV
+            fi
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4.0.1
         with:
@@ -32,8 +40,9 @@ jobs:
 
       - name: Restart Jitbit
         run: |
-          aws ecs update-service --force-new-deployment --service ${{ env.SERVICE_TASK_NAME }} --cluster ${{ env.SERVICE_TASK_NAME }}
+          aws ecs update-service --force-new-deployment --service ${SERVICE_TASK_NAME} --cluster ${SERVICE_TASK_NAME}
       
       - name: Ensure service stable
         run: |
-          aws ecs wait services-stable --services ${{ env.SERVICE_TASK_NAME }} --cluster ${{ env.SERVICE_TASK_NAME }}
+          aws ecs wait services-stable --services ${SERVICE_TASK_NAME} --cluster ${SERVICE_TASK_NAME}
+      
