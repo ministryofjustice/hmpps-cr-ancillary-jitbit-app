@@ -5,9 +5,10 @@ on:
       environment:
         type: choice
         options:
-          - "development"
-          - "test"
-          - "preproduction"
+          - sandbox
+          - development
+          - test
+          - preproduction
       scaling-type:
         type: choice
         options:
