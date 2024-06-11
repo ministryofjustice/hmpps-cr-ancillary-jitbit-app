@@ -44,13 +44,21 @@ jobs:
             echo "Scaling state is $scaling_state"
             echo "SCALING_STATE=$scaling_state" >> $GITHUB_OUTPUT
 
+        - name: service/cluster string
+          run: |
+              if [ "${{ inputs.environment }}" = "sandbox" ]; then
+                echo "CLUSTER_SERVICE_NAME=hmpps-development-delius-jitbit-${{ inputs.environment }}" >> $GITHUB_ENV
+              else
+                echo "CLUSTER_SERVICE_NAME=hmpps-${{ inputs.environment }}-delius-jitbit" >> $GITHUB_ENV
+              fi
+
         - name: Scale Jitbit ECS Service
         # if scaling state is enabled, then scale
           if: ${{ steps.scaling_state.outputs.SCALING_STATE == 'enabled' }}
           run: |
-            aws ecs update-service --cluster hmpps-${{ inputs.environment }}-delius-jitbit --service hmpps-${{ inputs.environment }}-delius-jitbit --desired-count ${{ env.DESIRED_COUNT }} --region eu-west-2
+            aws ecs update-service --cluster ${CLUSTER_SERVICE_NAME} --service ${CLUSTER_SERVICE_NAME} --desired-count ${{ env.DESIRED_COUNT }} --region eu-west-2
 
         - name: Wait for Jitbit to scale
           if: ${{ steps.scaling_state.outputs.SCALING_STATE == 'enabled' && inputs.action == 'up' }}
           run: |
-            aws ecs wait services-stable --cluster hmpps-${{ inputs.environment }}-delius-jitbit --service hmpps-${{ inputs.environment }}-delius-jitbit --region eu-west-2
+            aws ecs wait services-stable --cluster ${CLUSTER_SERVICE_NAME} --service ${CLUSTER_SERVICE_NAME} --region eu-west-2

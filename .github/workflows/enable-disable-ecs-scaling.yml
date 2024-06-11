@@ -5,6 +5,7 @@ on:
       environment:
         type: choice
         options:
+          - sandbox
           - development
           - test
           - preproduction
