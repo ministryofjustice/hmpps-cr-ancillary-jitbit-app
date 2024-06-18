@@ -47,7 +47,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build image and export
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./docker
           tags: delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }}
