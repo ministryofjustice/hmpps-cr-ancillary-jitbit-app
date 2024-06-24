@@ -16,7 +16,7 @@ jobs:
           - environment: sandbox
             image_tag: 10.25-latest
           - environment: development
-            image_tag: 10.23-latest
+            image_tag: 10.25-latest
           - environment: preproduction
             image_tag: 10.23-latest
           - environment: production
