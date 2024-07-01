@@ -125,7 +125,7 @@ jobs:
       - name: Alert Slack failure
         if: "${{ failure() && github.ref == 'refs/heads/main' }}"
         run: |
-          curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":fail: *Deployment Failed*"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"Deployment to the ${{ inputs.environment }} account failed"},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
+          curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":fail: Deployment Failed"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"Deployment to the ${{ inputs.environment }} account failed"},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Alert Slack Success
         if: "${{ success() && github.ref == 'refs/heads/main' }}"
