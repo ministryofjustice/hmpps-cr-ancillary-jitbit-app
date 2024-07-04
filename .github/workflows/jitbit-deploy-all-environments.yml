@@ -20,7 +20,7 @@ jobs:
           - environment: preproduction
             image_tag: 10.25-latest
           - environment: production
-            image_tag: 10.23-latest
+            image_tag: 10.25-latest
           - environment: test
             image_tag: 10.23-latest
     with:
