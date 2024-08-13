@@ -19,7 +19,7 @@ jobs:
     strategy: 
         fail-fast: false
         matrix:
-            jitbit_version: ["10.23", "10.25"]
+            jitbit_version: ["10.25", "10.26"]
     uses: ./.github/workflows/jitbit-build-push-image-reusable.yml
     with:
       jitbit_version: ${{ matrix.jitbit_version }}
