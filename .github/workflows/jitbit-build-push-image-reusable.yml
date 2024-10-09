@@ -86,7 +86,7 @@ jobs:
           docker load --input /tmp/jitbit-image-${{ inputs.jitbit_version }}.tar
 
       - name: Trivy scan
-        uses: aquasecurity/trivy-action@7c2007bcb556501da015201bcba5aa14069b74e2
+        uses: aquasecurity/trivy-action@a20de5420d57c4102486cdd9578b45609c99d7eb
         with:
           format: 'sarif'
           severity: 'CRITICAL,HIGH'
