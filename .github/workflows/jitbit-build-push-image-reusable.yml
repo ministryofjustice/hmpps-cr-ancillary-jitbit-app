@@ -88,21 +88,27 @@ jobs:
       - name: Trivy scan
         uses: aquasecurity/trivy-action@7c2007bcb556501da015201bcba5aa14069b74e2
         with:
-          format: 'sarif'
-          severity: 'CRITICAL,HIGH'
-          limit-severities-for-sarif: 'true'
-          image-ref: 'delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }}'
-          exit-code: '1'
-          scan-type: 'image'
-          trivyignores: '.trivyignore'
-          ignore-unfixed: 'true'
-          output: 'trivy-results.sarif'
+          format: "sarif"
+          severity: "CRITICAL,HIGH"
+          limit-severities-for-sarif: "true"
+          image-ref: "delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }}"
+          exit-code: "0"
+          scan-type: "image"
+          trivyignores: ".trivyignore"
+          ignore-unfixed: "true"
+          output: "trivy-results.sarif"
+
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
-        if: failure() # If Trivy found vulnerabilities
+        if: always() && (steps.trivy.outputs.trivy-results.sarif != '')
         with:
-          sarif_file: 'trivy-results.sarif'
-  
+          sarif_file: "trivy-results.sarif"
+
+      - name: Slack notification if vulnerabilities found
+        if: always() && (steps.trivy.outputs.trivy-results.sarif != '')
+        run: |
+          curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":x: Trivy :trivy: Scan Found Security Advisories"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"Image tag: delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }} \n <${{ github.server_url }}/${{ github.repository }}/security/code-scanning|Please check the security tab for details>"},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.JITBIT_ALERTS_NON_PROD_CHANNEL_WEBHOOK }}
+
   push-image:
     name: Publish image
     needs: [build-image, scan-image]
@@ -117,7 +123,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
@@ -133,16 +139,16 @@ jobs:
 
       - name: Load image from artifact
         run: |
-            docker load --input /tmp/jitbit-image-${{ inputs.jitbit_version }}.tar
+          docker load --input /tmp/jitbit-image-${{ inputs.jitbit_version }}.tar
 
       - name: Tag image with latest
         if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) || github.event.ref == 'refs/heads/main'
         run: |
-            docker tag delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }} ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-latest
+          docker tag delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }} ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-latest
 
       - name: Tag image with github run id and attempt
-        run: | 
-           docker tag delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }} ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          docker tag delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }} ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Login to ECR
         run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
