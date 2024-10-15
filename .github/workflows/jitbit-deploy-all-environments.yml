@@ -14,7 +14,7 @@ jobs:
       matrix:
         include:
           - environment: sandbox
-            image_tag: 10.28-latest
+            image_tag: 11.0-latest
           - environment: development
             image_tag: 10.25-latest
           - environment: preproduction
