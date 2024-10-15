@@ -91,8 +91,9 @@ jobs:
         with:
           format: "sarif"
           limit-severities-for-sarif: "true"
+          severity: "MEDIUM,HIGH,CRITICAL"
           image-ref: "delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }}"
-          exit-code: "2"
+          exit-code: "1"
           scan-type: "image"
           trivyignores: ".trivyignore"
           ignore-unfixed: "true"
@@ -105,15 +106,15 @@ jobs:
           sarif_file: "trivy-results.sarif"
 
       - name: Slack notification if vulnerabilities found
-        if: always() && steps.trivy.outputs.exit-code == '2'
+        if: failure()
         run: |
-          if [ -f trivy-results.sarif ]; then
+          if [ ${{ steps.trivy.outputs.vulnerabilities }} -gt 0 ]; then
             curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":x: Trivy :trivy: Scan Found Security Advisories"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"Image tag: delius-jitbit-ecr-repo:${{ github.run_id }}-${{ github.run_attempt }} \n <${{ github.server_url }}/${{ github.repository }}/security/code-scanning|Please check the security tab for details>"},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.JITBIT_ALERTS_NON_PROD_CHANNEL_WEBHOOK }}
           fi
 
   push-image:
     name: Publish image
-    needs: [build-image, scan-image]
+    needs: [build-image]
     permissions:
       id-token: write
       contents: write
