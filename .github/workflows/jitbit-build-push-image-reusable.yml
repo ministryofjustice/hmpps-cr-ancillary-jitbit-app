@@ -51,7 +51,7 @@ jobs:
         with:
           context: ./docker
           tags: delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}
-          outputs: type=docker,dest=/tmp/jitbit-image${{ inputs.jitbit_version }}-${{ github.run_id }}.tar
+          outputs: type=docker,dest=/tmp/jitbit-image-${{ inputs.jitbit_version }}-${{ github.run_id }}.tar
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -128,7 +128,7 @@ jobs:
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
-          name: jitbit-image-${{ inputs.jitbit_version }}
+          name: jitbit-image-${{ inputs.jitbit_version }}-${{ github.run_id }}
           path: /tmp
 
       - name: Configure AWS Credentials
@@ -140,7 +140,7 @@ jobs:
 
       - name: Load image from artifact
         run: |
-          docker load --input /tmp/jitbit-image-${{ inputs.jitbit_version }}.tar
+          docker load --input /tmp/jitbit-image-${{ inputs.jitbit_version }}-${{ github.run_id }}.tar
 
       - name: Tag image with latest
         if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) || github.event.ref == 'refs/heads/main'
