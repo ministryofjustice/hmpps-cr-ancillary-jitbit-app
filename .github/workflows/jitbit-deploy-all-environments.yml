@@ -18,7 +18,7 @@ jobs:
           - environment: development
             image_tag: 11.5-latest
           - environment: preproduction
-            image_tag: 10.25-latest
+            image_tag: 11.5-latest
           - environment: production
             image_tag: 10.25-latest
           - environment: test
