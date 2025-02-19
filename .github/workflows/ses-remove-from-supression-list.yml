@@ -48,3 +48,4 @@ jobs:
               echo "❌ Failed to remove $email"
               exit 1
             fi
+          done
