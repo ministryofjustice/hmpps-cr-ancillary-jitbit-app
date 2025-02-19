@@ -1,2 +1,2 @@
 * @ministryofjustice/hosting-migrations
-.github/workflows/jitbit-deploy-all-environments.yml @ministryofjustice/hmpps-delius-jitbit-devs @ministryofjustice/hosting-migrations
+.github/workflows/jitbit-*.yml @ministryofjustice/hmpps-delius-jitbit-devs @ministryofjustice/hosting-migrations
