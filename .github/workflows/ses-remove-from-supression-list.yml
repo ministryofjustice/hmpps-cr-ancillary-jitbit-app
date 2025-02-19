@@ -38,14 +38,20 @@ jobs:
           emails=($(echo "${{ inputs.emails }}" | tr ',' '\n' | sed 's/^ *//g' | sed 's/ *$//g'))
 
           for email in "${emails[@]}"; do
-            echo "Removing $email from suppression list..."
-            aws sesv2 delete-suppressed-destination \
-              --email-address "$email"
+            echo "Checking if $email is in suppression list..."
             
-            if [ $? -eq 0 ]; then
-              echo "✅ Successfully removed $email"
+            # Try to get the suppression attributes for the email
+            if aws sesv2 get-suppressed-destination --email-address "$email" >/dev/null 2>&1; then
+              echo "Found $email in suppression list, removing..."
+              aws sesv2 delete-suppressed-destination --email-address "$email"
+              
+              if [ $? -eq 0 ]; then
+                echo "✅ Successfully removed $email"
+              else
+                echo "❌ Failed to remove $email"
+                exit 1
+              fi
             else
-              echo "❌ Failed to remove $email"
-              exit 1
+              echo "ℹ️ $email is not in the suppression list for ${{ inputs.environment }}"
             fi
           done
