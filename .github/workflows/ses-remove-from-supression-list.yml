@@ -1,0 +1,50 @@
+name: Remove entries from SES Suppression List
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to remove suppression from"
+        type: choice
+        required: true
+        options:
+          - development
+          - test
+          - preproduction
+          - production
+      emails:
+        description: "Email addresses to remove (comma separated for multiple)"
+        type: string
+        required: true
+
+jobs:
+  remove-from-suppression:
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+          role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
+          aws-region: "eu-west-2"
+
+      - name: Remove emails from suppression list
+        run: |
+          # Split comma-separated emails and remove whitespace
+          emails=($(echo "${{ inputs.emails }}" | tr ',' '\n' | sed 's/^ *//g' | sed 's/ *$//g'))
+
+          for email in "${emails[@]}"; do
+            echo "Removing $email from suppression list..."
+            aws sesv2 delete-suppressed-destination \
+              --email-address "$email"
+            
+            if [ $? -eq 0 ]; then
+              echo "✅ Successfully removed $email"
+            else
+              echo "❌ Failed to remove $email"
+              exit 1
+            fi
