@@ -1,0 +1,11 @@
+name: Schedule Remove Recall Emails From SES Suppression List
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # Runs every 15 minutes
+
+jobs:
+  call-remove-suppression:
+    uses: ./.github/workflows/ses-remove-from-supression-list.yml
+    with:
+      environment: "production"
+      emails: "recall1@justice.gov.uk,recall2@justice.gov.uk"
