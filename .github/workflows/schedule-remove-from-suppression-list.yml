@@ -5,7 +5,7 @@ on:
 
 jobs:
   call-remove-suppression:
-    uses: ./.github/workflows/ses-remove-from-supression-list.yml
+    uses: ./.github/workflows/ses-remove-from-suppression-list.yml
     with:
       environment: "production"
       emails: "recall1@justice.gov.uk,recall2@justice.gov.uk"
