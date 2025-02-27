@@ -5,7 +5,11 @@ provider "registry.terraform.io/hashicorp/aws" {
   version     = "5.88.0"
   constraints = "~> 5.0"
   hashes = [
+<<<<<<< HEAD
     "h1:8So0IR8jwKx8WhVuD1LDsbeMTe78/SF5g4d7z5C6+C4=",
+=======
+    "h1:nks+LOLQf0gfh7EZCqpWErw9/03yqYDEaGxYqUfEc78=",
+>>>>>>> 66672c3 (add blue-green deployments)
     "zh:24f852b1cca276d91f950cb7fb575cacc385f55edccf4beec1f611cdd7626cf5",
     "zh:2a3b3f5ac513f8d6448a31d9619f8a96e0597dd354459de3a4698e684c909f96",
     "zh:3700499885a8e0e532eccba3cb068340e411cf9e616bf8a59e815d3b62ca3e46",
@@ -21,6 +25,7 @@ provider "registry.terraform.io/hashicorp/aws" {
     "zh:d52cd68006fd6fa8d028cdf569a6620fbc31726019beb7c75affa8764622d398",
     "zh:f179ca86ad5d5fb88dfd8e8e7c448f2c0ad550d22152f939b8465baeaf9289e9",
     "zh:f54dda271fa6dfee06537066278669a3f92c872e7dfa5a0184cd9117f7e47b8c",
+<<<<<<< HEAD
   ]
 }
 
@@ -41,5 +46,7 @@ provider "registry.terraform.io/hashicorp/local" {
     "zh:e0e2b477c7e899c63b06b38cd8684a893d834d6d0b5e9b033cedc06dd7ffe9e2",
     "zh:f62d7d05ea1ee566f732505200ab38d94315a4add27947a60afa29860822d3fc",
     "zh:fa7ce69dde358e172bd719014ad637634bbdabc49363104f4fca759b4b73f2ce",
+=======
+>>>>>>> 66672c3 (add blue-green deployments)
   ]
 }
