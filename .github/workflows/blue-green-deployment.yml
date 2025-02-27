@@ -17,7 +17,7 @@ on:
 
 jobs:
   create-container:
-    name: Create ECS in delius-jitbit ${{ github.event.inputs.environment }}
+    name: Prep new container in delius-jitbit ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
     environment: delius-jitbit-${{ github.event.inputs.environment }}
     permissions:
@@ -25,7 +25,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
