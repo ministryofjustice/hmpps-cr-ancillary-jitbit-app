@@ -18,7 +18,7 @@ on:
 
 jobs:
   create-container:
-    name: Create ECS in delius-jitbit ${{ github.event.inputs.environment }}
+    name: Prep new container in delius-jitbit ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
     environment: delius-jitbit-${{ github.event.inputs.environment }}
     permissions:
@@ -26,7 +26,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -47,21 +47,21 @@ jobs:
           echo "terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl"
           terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl
 
-      - name: Terraform Plan
+      - name: Terraform Plan # ensures both blue and green are now running
         id: plan
         working-directory: terraform
         run: |
           set -o pipefail
           exitcode=0
           tfargs="-detailed-exitcode"
-          echo "terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=${{ inputs.image_tag }}" $tfargs | tee tfplan.txt || exitcode=$?"
+          echo "terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=${{ inputs.image_tag }}" -var="ecs_switch=true" $tfargs | tee tfplan.txt || exitcode=$?"
           terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=${{ inputs.image_tag }}" $tfargs | tee tfplan.txt || exitcode=$?
           echo "exitcode=${exitcode}"  # 0=clean plan, 1=error, 2=stuff in plan
           echo "exitcode=${exitcode}" >> $GITHUB_OUTPUT
           (( exitcode == 1 )) && exit 1 || exit 0
-      
 
-      
+
+
   manual-testing: # jitbit team checks their upgrade work at this point
     name: Wait for manual testing from jitbit team
     runs-on: ubuntu-latest
@@ -71,8 +71,8 @@ jobs:
   
   health-check: # automated check
     name: Wait for manual testing from jitbit team
-      runs-on: ubuntu-latest
-      environment: delius-jitbit-${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: delius-jitbit-${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
     environment: delius-jitbit-${{ github.event.inputs.environment }}
     permissions:

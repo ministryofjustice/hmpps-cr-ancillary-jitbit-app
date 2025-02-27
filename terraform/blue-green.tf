@@ -5,9 +5,10 @@ locals {
 
 # blue
 module "container_blue" {
+  count     = var.blue_green == "blue" || var.ecs_switch ? 1 : 0
   source    = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//container?ref=v4.3.0"
   name      = "${local.container_name}-blue"
-  image     = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
+  image     = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag_blue}"
   essential = true
 
   environment = [
@@ -65,6 +66,7 @@ module "container_blue" {
 }
 
 module "deploy_blue" {
+  count                 = var.blue_green == "blue" || var.ecs_switch ? 1 : 0
   source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=v4.3.0"
   container_definitions = module.container.json_encoded_list
   cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}-blue"
@@ -107,9 +109,10 @@ module "deploy_blue" {
 # green
 
 module "container_green" {
+  count     = var.blue_green == "green" || var.ecs_switch ? 1 : 0
   source    = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//container?ref=v4.3.0"
   name      = "${local.container_name}-green"
-  image     = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
+  image     = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag_green}"
   essential = true
 
   environment = [
@@ -167,6 +170,7 @@ module "container_green" {
 }
 
 module "deploy_green" {
+  count                 = var.blue_green == "green" || var.ecs_switch ? 1 : 0
   source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=v4.3.0"
   container_definitions = module.container.json_encoded_list
   cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}-green"
