@@ -60,26 +60,46 @@ jobs:
           echo "exitcode=${exitcode}" >> $GITHUB_OUTPUT
           (( exitcode == 1 )) && exit 1 || exit 0
 
-
-
   manual-testing: # jitbit team checks their upgrade work at this point
     name: Wait for manual testing from jitbit team
     runs-on: ubuntu-latest
     environment: delius-jitbit-${{ github.event.inputs.environment }}
-    permissions:
-      id-token: write
-  
-  health-check: # automated check
-    name: Wait for manual testing from jitbit team
+    steps:
+      - name: Wait for approval
+        run: echo "Waiting for approval" # change this
+
+  health-check:
+    name: Automated health check
     runs-on: ubuntu-latest
     environment: delius-jitbit-${{ github.event.inputs.environment }}
-    permissions:
-      id-token: write
+    steps:
+      - name: Run health check
+        run: echo "Performing automated health checks..."
 
   switch-traffic:
+    name: Switch traffic to new deployment
+    runs-on: ubuntu-latest
+    environment: delius-jitbit-${{ github.event.inputs.environment }}
+    steps:
+      - name: Update load balancer target group
+        run: echo "Switching traffic to new container..."
+      - name: Verify traffic switch
+        run: echo "Confirming traffic is directed to new deployment..."
 
-  terminate-old: # optional step to terminate old container
+  terminate-old: # need to depend on approval
+    name: Terminate old container
+    runs-on: ubuntu-latest
+    environment: delius-jitbit-${{ github.event.inputs.environment }}
+    steps:
+      - name: Stop old container
+        run: echo "Terminating old container instance..."
 
-  rollback: # optional step to switch traffic back
-
-
+  rollback: # need to depend on approval
+    name: Rollback to previous deployment
+    runs-on: ubuntu-latest
+    environment: delius-jitbit-${{ github.event.inputs.environment }}
+    steps:
+      - name: Switch traffic back to previous deployment
+        run: echo "Reverting traffic to old deployment..."
+      - name: Verify rollback success
+        run: echo "Confirming rollback has been completed..."
