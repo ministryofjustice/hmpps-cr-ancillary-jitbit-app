@@ -8,6 +8,7 @@ on:
         environment:
           required: true
           type: choice
+          default: "development"
           options:
             - "development"
             - "test"
