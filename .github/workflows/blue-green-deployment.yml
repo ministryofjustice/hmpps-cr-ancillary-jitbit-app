@@ -1,14 +1,10 @@
 name: "Jitbit: Blue-Green Deployment"
 on:
-  #push:
-  #  branches:
-  #    - "TM-972"
   workflow_dispatch:
     inputs:
         environment:
           required: true
           type: choice
-          default: "development"
           options:
             - "development"
             - "test"
