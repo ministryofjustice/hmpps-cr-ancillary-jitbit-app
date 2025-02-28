@@ -6,17 +6,21 @@ on:
   workflow_dispatch:
     inputs:
         environment:
-            required: true
-            type: choice
-            options:
-              - "development"
-              - "test"
-              - "preproduction"
-              - "production"
+          required: true
+          type: choice
+          options:
+            - "development"
+            - "test"
+            - "preproduction"
+            - "production"
         image_tag:
             required: false
             type: string
             default: "latest"
+        terraform_version:
+            required: false
+            type: string
+            default: "~1.6"
 
 jobs:
   create-container:
