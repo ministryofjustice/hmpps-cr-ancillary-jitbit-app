@@ -99,7 +99,7 @@ module "deploy" {
     data.aws_subnet.private_subnets_c.id
   ]
 
-  ignore_changes       = true
+  ignore_changes       = false
   force_new_deployment = false
 }
 
