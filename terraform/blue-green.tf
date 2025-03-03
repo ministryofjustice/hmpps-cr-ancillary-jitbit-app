@@ -43,19 +43,19 @@ module "container_blue" {
   secrets = [
     {
       name      = "ConnectionStrings__DBConnectionString"
-      valueFrom = data.aws_secretsmanager_secret.connection_string.arn
+      value     = "empty" # while testing
     },
     {
       name      = "AttachmentsS3Login"
-      valueFrom = data.aws_secretsmanager_secret.s3_user_access_key.arn
+      value     = "empty" # while testing
     },
     {
       name      = "AttachmentsS3Password"
-      valueFrom = data.aws_secretsmanager_secret.s3_user_secret_key.arn
+      value     = "empty" # while testing
     },
     {
       name      = "AppURL"
-      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${local.app_name}/environment/app-url"
+      value     = "empty" # while testing
     }
   ]
 }
@@ -147,19 +147,19 @@ module "container_green" {
   secrets = [
     {
       name      = "ConnectionStrings__DBConnectionString"
-      valueFrom = data.aws_secretsmanager_secret.connection_string.arn
+      value     = "empty" # while testing
     },
     {
       name      = "AttachmentsS3Login"
-      valueFrom = data.aws_secretsmanager_secret.s3_user_access_key.arn
+      value     = "empty" # while testing
     },
     {
       name      = "AttachmentsS3Password"
-      valueFrom = data.aws_secretsmanager_secret.s3_user_secret_key.arn
+      value     = "empty" # while testing
     },
     {
       name      = "AppURL"
-      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${local.app_name}/environment/app-url"
+      value     = "empty" # while testing
     }
   ]
 }
