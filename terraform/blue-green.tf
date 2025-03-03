@@ -1,8 +1,3 @@
-locals {
-  app_name       = "delius-jitbit"
-  container_name = "hmpps-${var.environment}-${local.app_name}${var.suffix}"
-}
-
 # blue
 module "container_blue" {
   count     = var.blue_green == "blue" || var.ecs_switch ? 1 : 0
