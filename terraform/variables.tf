@@ -79,3 +79,15 @@ variable "blue_green" {
   description = "Indicates which instance is currently being used"
   default     = ""
 }
+
+variable "image_tag_blue" {
+  type        = string
+  description = "Image tag for blue instance"
+  default     = "latest"
+}
+
+variable "image_tag_green" {
+  type        = string
+  description = "Image tag for blue instance"
+  default     = "latest"
+}
