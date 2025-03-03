@@ -43,19 +43,19 @@ module "container_blue" {
   secrets = [
     {
       name      = "ConnectionStrings__DBConnectionString"
-      valueFrom     = "empty" # while testing
+      valueFrom = "empty" # while testing
     },
     {
       name      = "AttachmentsS3Login"
-      valueFrom     = "empty" # while testing
+      valueFrom = "empty" # while testing
     },
     {
       name      = "AttachmentsS3Password"
-      valueFrom     = "empty" # while testing
+      valueFrom = "empty" # while testing
     },
     {
       name      = "AppURL"
-      valueFrom     = "empty" # while testing
+      valueFrom = "empty" # while testing
     }
   ]
 }
@@ -147,19 +147,19 @@ module "container_green" {
   secrets = [
     {
       name      = "ConnectionStrings__DBConnectionString"
-      valueFrom     = "empty" # while testing
+      valueFrom = "empty" # while testing
     },
     {
       name      = "AttachmentsS3Login"
-      valueFrom     = "empty" # while testing
+      valueFrom = "empty" # while testing
     },
     {
       name      = "AttachmentsS3Password"
-      valueFrom     = "empty" # while testing
+      valueFrom = "empty" # while testing
     },
     {
       name      = "AppURL"
-      valueFrom     = "empty" # while testing
+      valueFrom = "empty" # while testing
     }
   ]
 }
