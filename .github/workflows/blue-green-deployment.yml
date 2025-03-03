@@ -92,7 +92,9 @@ jobs:
 
   terminate-old: # need to depend on approval
     name: Terminate old container
+    needs: switch-traffic
     runs-on: ubuntu-latest
+    continue-on-error: true
     environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Terminate old container
@@ -100,7 +102,9 @@ jobs:
 
   rollback: # need to depend on approval
     name: Rollback to previous deployment
+    needs: switch-traffic
     runs-on: ubuntu-latest
+    continue-on-error: true
     environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Switch traffic back to previous deployment
