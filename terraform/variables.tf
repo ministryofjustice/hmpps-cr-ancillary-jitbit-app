@@ -67,3 +67,15 @@ variable "deployment_maximum_percent" {
   description = "The upper limit of the number of tasks (as a percentage of `desired_count`) that can be running in a service during a deployment"
   default     = 100
 }
+
+variable "ecs_switch" {
+  type        = bool
+  description = "True when running terraform to switch between blue and green"
+  default     = "false"
+}
+
+variable "blue_green" {
+  type        = string
+  description = "Indicates which instance is currently being used"
+  default     = ""
+}
