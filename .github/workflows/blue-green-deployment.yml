@@ -23,7 +23,7 @@ jobs:
   create-container:
     name: Prep new container in delius-jitbit ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
-    environment: delius-jitbit-${{ github.event.inputs.environment }}
+    environment: ${{ github.event.inputs.environment }}
     permissions:
       id-token: write
     steps:
@@ -67,7 +67,7 @@ jobs:
     name: Wait for manual testing from jitbit team
     needs: create-container
     runs-on: ubuntu-latest
-    environment: delius-jitbit-${{ github.event.inputs.environment }}
+    environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Wait for approval
         run: echo "Waiting for approval" # change this
@@ -76,7 +76,7 @@ jobs:
     name: Automated health check
     needs: manual-testing
     runs-on: ubuntu-latest
-    environment: delius-jitbit-${{ github.event.inputs.environment }}
+    environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Run health check
         run: echo "Running health checks..."
@@ -85,7 +85,7 @@ jobs:
     name: Switch traffic to new deployment
     needs: health-check
     runs-on: ubuntu-latest
-    environment: delius-jitbit-${{ github.event.inputs.environment }}
+    environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Update load balancer target group
         run: echo "Updating lb target group..."
@@ -93,7 +93,7 @@ jobs:
   terminate-old: # need to depend on approval
     name: Terminate old container
     runs-on: ubuntu-latest
-    environment: delius-jitbit-${{ github.event.inputs.environment }}
+    environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Terminate old container
         run: echo "Terminating old container instance..."
@@ -101,7 +101,7 @@ jobs:
   rollback: # need to depend on approval
     name: Rollback to previous deployment
     runs-on: ubuntu-latest
-    environment: delius-jitbit-${{ github.event.inputs.environment }}
+    environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Switch traffic back to previous deployment
         run: echo "Switching traffic to previous deployment..."
