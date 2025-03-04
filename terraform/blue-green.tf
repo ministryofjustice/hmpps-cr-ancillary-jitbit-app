@@ -42,28 +42,36 @@ module "container_blue" {
   }
   secrets = [
     {
-      name      = "ConnectionStrings__DBConnectionString"
-      valueFrom = "empty" # while testing
+      name      = "empty"
+      valueFrom = "empty"
     },
     {
-      name      = "AttachmentsS3Login"
-      valueFrom = "empty" # while testing
-    },
-    {
-      name      = "AttachmentsS3Password"
-      valueFrom = "empty" # while testing
-    },
-    {
-      name      = "AppURL"
-      valueFrom = "empty" # while testing
+      name      = "empty2"
+      valueFrom = "empty2"
     }
+    # {
+    #   name      = "ConnectionStrings__DBConnectionString"
+    #   valueFrom = "empty" # while testing
+    # },
+    # {
+    #   name      = "AttachmentsS3Login"
+    #   valueFrom = "empty" # while testing
+    # },
+    # {
+    #   name      = "AttachmentsS3Password"
+    #   valueFrom = "empty" # while testing
+    # },
+    # {
+    #   name      = "AppURL"
+    #   valueFrom = "empty" # while testing
+    # }
   ]
 }
 
 module "deploy_blue" {
   count                 = var.blue_green == "blue" || var.ecs_switch ? 1 : 0
   source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=v4.3.0"
-  container_definitions = module.container.json_encoded_list
+  container_definitions = module.container_blue[0].json_encoded_list
   cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}-blue"
   name                  = "${local.container_name}-blue"
 
@@ -146,28 +154,36 @@ module "container_green" {
   }
   secrets = [
     {
-      name      = "ConnectionStrings__DBConnectionString"
-      valueFrom = "empty" # while testing
+      name      = "empty"
+      valueFrom = "empty"
     },
     {
-      name      = "AttachmentsS3Login"
-      valueFrom = "empty" # while testing
-    },
-    {
-      name      = "AttachmentsS3Password"
-      valueFrom = "empty" # while testing
-    },
-    {
-      name      = "AppURL"
-      valueFrom = "empty" # while testing
+      name      = "empty2"
+      valueFrom = "empty2"
     }
+    # {
+    #   name      = "ConnectionStrings__DBConnectionString"
+    #   valueFrom = "empty" # while testing
+    # },
+    # {
+    #   name      = "AttachmentsS3Login"
+    #   valueFrom = "empty" # while testing
+    # },
+    # {
+    #   name      = "AttachmentsS3Password"
+    #   valueFrom = "empty" # while testing
+    # },
+    # {
+    #   name      = "AppURL"
+    #   valueFrom = "empty" # while testing
+    # }
   ]
 }
 
 module "deploy_green" {
   count                 = var.blue_green == "green" || var.ecs_switch ? 1 : 0
   source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=v4.3.0"
-  container_definitions = module.container.json_encoded_list
+  container_definitions = module.container_green[0].json_encoded_list
   cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}-green"
   name                  = "${local.container_name}-green"
 
