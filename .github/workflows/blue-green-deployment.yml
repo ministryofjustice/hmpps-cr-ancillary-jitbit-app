@@ -97,7 +97,7 @@ jobs:
           set -e
           cd terraform
           terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl
-          terraform apply -auto-approve -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=${{ inputs.image_tag }}" -var="ecs_switch=true" | sed 's/[^a-zA-Z0-9.]/-/g')"
+          terraform apply -auto-approve -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=${{ inputs.image_tag }}" -var="ecs_switch=true"
 
   manual-testing: # jitbit team checks their upgrade work at this point
     name: Wait for manual testing from jitbit team
