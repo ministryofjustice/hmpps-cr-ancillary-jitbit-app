@@ -6,6 +6,7 @@ on:
           required: true
           type: choice
           options:
+            - "sandbox"
             - "development"
             - "test"
             - "preproduction"
