@@ -20,8 +20,8 @@ on:
             default: "~1.6"
 
 jobs:
-  create-container:
-    name: Prep new container in delius-jitbit ${{ github.event.inputs.environment }}
+  create-container-plan:
+    name: Plan for new container in delius-jitbit ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     permissions:
@@ -63,9 +63,45 @@ jobs:
           echo "exitcode=${exitcode}" >> $GITHUB_OUTPUT
           (( exitcode == 1 )) && exit 1 || exit 0
 
+  create-container-apply:
+    name: Apply for new container
+    runs-on: ubuntu-latest
+    needs: create-container-plan
+    permissions:
+      id-token: write
+      contents: read
+    if: needs.plan.outputs.plan_exitcode == '2'
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4.0.1
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+          role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
+          aws-region: "eu-west-2"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "${{ inputs.terraform_version }}"
+          terraform_wrapper: false
+
+      - name: Apply
+        id: apply
+        run: |
+          set -e
+          cd terraform
+          terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl
+          terraform apply -auto-approve -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=${{ inputs.image_tag }}" -var="ecs_switch=true" | sed 's/[^a-zA-Z0-9.]/-/g')"
+
   manual-testing: # jitbit team checks their upgrade work at this point
     name: Wait for manual testing from jitbit team
-    needs: create-container
+    needs: create-container-apply
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     steps:
