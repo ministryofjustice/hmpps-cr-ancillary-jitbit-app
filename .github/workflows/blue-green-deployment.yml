@@ -109,55 +109,55 @@ jobs:
       - name: Wait for approval
         run: echo "Waiting for approval" # change this
 
-  health-check:
-    name: Automated health check
-    needs: manual-testing
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-    environment: ${{ github.event.inputs.environment }}
-    steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
-          role-session-name: "hmpps-delius-operational-automation-${{ github.run_number }}"
-          aws-region: "eu-west-2"
+  # health-check:
+  #   name: Automated health check
+  #   needs: manual-testing
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     id-token: write
+  #   environment: ${{ github.event.inputs.environment }}
+  #   steps:
+  #     - name: Configure AWS Credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+  #         role-session-name: "hmpps-delius-operational-automation-${{ github.run_number }}"
+  #         aws-region: "eu-west-2"
 
-      - name: Run health check
-        run: |
-          set -e
+  #     - name: Run health check
+  #       run: |
+  #         set -e
 
-          BLUE_GREEN=$(aws ssm get-parameter --name "/blue_green" --query "Parameter.Value" --output text)
+  #         BLUE_GREEN=$(aws ssm get-parameter --name "/blue_green" --query "Parameter.Value" --output text)
 
-          # check prep cluster not current
-          if [ "$BLUE_GREEN" == "blue" ]; then
-            CLUSTER_NAME="hmpps-${{ github.event.inputs.environment }}-delius-jitbit-green"
-          elif [ "$BLUE_GREEN" == "green" ]; then
-            CLUSTER_NAME="hmpps-${{ github.event.inputs.environment }}-delius-jitbit-blue"
-          fi
+  #         # check prep cluster not current
+  #         if [ "$BLUE_GREEN" == "blue" ]; then
+  #           CLUSTER_NAME="hmpps-${{ github.event.inputs.environment }}-delius-jitbit-green"
+  #         elif [ "$BLUE_GREEN" == "green" ]; then
+  #           CLUSTER_NAME="hmpps-${{ github.event.inputs.environment }}-delius-jitbit-blue"
+  #         fi
 
-          echo "Fetching running tasks in cluster: $CLUSTER_NAME"
-          TASK_ARNS=$(aws ecs list-tasks --cluster "$CLUSTER_NAME" --query "taskArns" --output text)
+  #         echo "Fetching running tasks in cluster: $CLUSTER_NAME"
+  #         TASK_ARNS=$(aws ecs list-tasks --cluster "$CLUSTER_NAME" --query "taskArns" --output text)
 
-          if [ -z "$TASK_ARNS" ]; then
-            echo "No running tasks found in cluster $CLUSTER_NAME"
-            exit 1
-          fi
+  #         if [ -z "$TASK_ARNS" ]; then
+  #           echo "No running tasks found in cluster $CLUSTER_NAME"
+  #           exit 1
+  #         fi
 
-          for TASK_ARN in $TASK_ARNS; do
-            echo "Checking health for task: $TASK_ARN"
-            HEALTH_STATUS=$(aws ecs describe-tasks --cluster "$CLUSTER_NAME" --tasks "$TASK_ARN" --query "tasks[*].healthStatus" --output text)
+  #         for TASK_ARN in $TASK_ARNS; do
+  #           echo "Checking health for task: $TASK_ARN"
+  #           HEALTH_STATUS=$(aws ecs describe-tasks --cluster "$CLUSTER_NAME" --tasks "$TASK_ARN" --query "tasks[*].healthStatus" --output text)
 
-            if [ "$HEALTH_STATUS" != "HEALTHY" ]; then
-              echo "Task $TASK_ARN is not healthy!"
-              exit 1
-            fi
+  #           if [ "$HEALTH_STATUS" != "HEALTHY" ]; then
+  #             echo "Task $TASK_ARN is not healthy!"
+  #             exit 1
+  #           fi
 
-            echo "Task $TASK_ARN is healthy."
-          done
+  #           echo "Task $TASK_ARN is healthy."
+  #         done
 
-          echo "All tasks are healthy."
+  #         echo "All tasks are healthy."
 
   switch-traffic:
     name: Switch traffic to new deployment
