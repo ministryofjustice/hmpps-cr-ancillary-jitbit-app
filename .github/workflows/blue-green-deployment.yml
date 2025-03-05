@@ -164,6 +164,20 @@ jobs:
         run: |
           aws elbv2 modify-rule --rule-arn "$LISTENER_RULE_ARN" --actions Type=forward,TargetGroupArn=arn:aws:elasticloadbalancing:eu-west-2:${{ vars.AWS_ACCOUNT_ID }}:targetgroup/$NEW_TG
 
+      - name: Update SSM parameter
+        run: |
+          BLUE_GREEN=$(aws ssm get-parameter --name "/blue_green" --query "Parameter.Value" --output text)
+
+          if [ "$BLUE_GREEN" == "blue" ]; then
+            CLUSTER_NAME="hmpps-${{ github.event.inputs.environment }}-delius-jitbit-green"
+            NEW_BLUE_GREEN="green"
+          elif [ "$BLUE_GREEN" == "green" ]; then
+            CLUSTER_NAME="hmpps-${{ github.event.inputs.environment }}-delius-jitbit-blue"
+            NEW_BLUE_GREEN="blue"
+          fi
+
+          aws ssm put-parameter --name "/blue_green" --value "$NEW_BLUE_GREEN" --type "String" --overwrite
+
   terminate-old: # need to depend on approval
     name: Terminate old container
     needs: switch-traffic
