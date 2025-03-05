@@ -113,6 +113,8 @@ jobs:
     name: Automated health check
     needs: manual-testing
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Configure AWS Credentials
