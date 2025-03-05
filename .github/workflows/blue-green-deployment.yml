@@ -6,7 +6,6 @@ on:
           required: true
           type: choice
           options:
-            - "sandbox"
             - "development"
             - "test"
             - "preproduction"
@@ -30,6 +29,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -73,18 +74,6 @@ jobs:
       contents: read
     environment: ${{ inputs.environment }}
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4.0.1
-        with:
-          role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
-          role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
-          aws-region: "eu-west-2"
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -115,7 +104,39 @@ jobs:
     environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Run health check
-        run: echo "Running health checks..."
+        run: |
+          set -e
+
+          BLUE_GREEN=$(aws ssm get-parameter --name "/blue_green" --query "Parameter.Value" --output text)
+
+          # check prep cluster not current
+          if [ "$BLUE_GREEN" == "blue" ]; then
+            CLUSTER_NAME="hmpps-${{ github.event.inputs.environment }}-delius-jitbit-green"
+          elif [ "$BLUE_GREEN" == "green" ]; then
+            CLUSTER_NAME="hmpps-${{ github.event.inputs.environment }}-delius-jitbit-blue"
+          fi
+
+          echo "Fetching running tasks in cluster: $CLUSTER_NAME"
+          TASK_ARNS=$(aws ecs list-tasks --cluster "$CLUSTER_NAME" --query "taskArns" --output text)
+
+          if [ -z "$TASK_ARNS" ]; then
+            echo "No running tasks found in cluster $CLUSTER_NAME"
+            exit 1
+          fi
+
+          for TASK_ARN in $TASK_ARNS; do
+            echo "Checking health for task: $TASK_ARN"
+            HEALTH_STATUS=$(aws ecs describe-tasks --cluster "$CLUSTER_NAME" --tasks "$TASK_ARN" --query "tasks[*].healthStatus" --output text)
+
+            if [ "$HEALTH_STATUS" != "HEALTHY" ]; then
+              echo "Task $TASK_ARN is not healthy!"
+              exit 1
+            fi
+
+            echo "Task $TASK_ARN is healthy."
+          done
+
+          echo "All tasks are healthy."
 
   switch-traffic:
     name: Switch traffic to new deployment
@@ -123,8 +144,25 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     steps:
-      - name: Update load balancer target group
-        run: echo "Updating lb target group..."
+      - name: Get current target group
+        id: get-tg
+        run: |
+          LISTENER_RULE_ARN=$(aws elbv2 describe-rules --query "Rules[?Tags[?Key=='Name' && Value=='blue-green']].RuleArn" --output text)
+          CURRENT_TG=$(aws elbv2 describe-rules --rule-arns "$LISTENER_RULE_ARN" --query "Rules[0].Actions[0].TargetGroupArn" --output text)
+
+          if [[ "$CURRENT_TG" == *"delius-jitbit-blue"* ]]; then
+            NEW_TG="delius-jitbit-green"
+          else
+            NEW_TG="delius-jitbit-blue"
+          fi
+
+          echo "LISTENER_RULE_ARN=$LISTENER_RULE_ARN" >> $GITHUB_ENV
+          echo "CURRENT_TG=$CURRENT_TG" >> $GITHUB_ENV
+          echo "NEW_TG=$NEW_TG" >> $GITHUB_ENV
+
+      - name: Switch target group
+        run: |
+          aws elbv2 modify-rule --rule-arn "$LISTENER_RULE_ARN" --actions Type=forward,TargetGroupArn=arn:aws:elasticloadbalancing:eu-west-2:${{ vars.AWS_ACCOUNT_ID }}:targetgroup/$NEW_TG
 
   terminate-old: # need to depend on approval
     name: Terminate old container
