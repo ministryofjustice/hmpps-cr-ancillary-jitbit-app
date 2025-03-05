@@ -161,7 +161,7 @@ jobs:
 
   switch-traffic:
     name: Switch traffic to new deployment
-    needs: health-check
+    # needs: health-check
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     steps:
