@@ -174,24 +174,20 @@ jobs:
           role-session-name: "hmpps-delius-operational-automation-${{ github.run_number }}"
           aws-region: "eu-west-2"
 
-      - name: Get current target group
-        id: get-tg
+      - name: Switch target group
         run: |
-          LISTENER_RULE_ARN=$(aws elbv2 describe-rules --query "Rules[?Tags[?Key=='Name' && Value=='blue-green']].RuleArn" --output text)
-          CURRENT_TG=$(aws elbv2 describe-rules --rule-arns "$LISTENER_RULE_ARN" --query "Rules[0].Actions[0].TargetGroupArn" --output text)
+          BLUE_GREEN=$(aws ssm get-parameter --name "/blue_green" --query "Parameter.Value" --output text)
 
-          if [[ "$CURRENT_TG" == *"delius-jitbit-blue"* ]]; then
+          if [ "$BLUE_GREEN" == "blue" ]; then
             NEW_TG="delius-jitbit-green"
-          else
+          elif [ "$BLUE_GREEN" == "green" ]; then
             NEW_TG="delius-jitbit-blue"
           fi
 
-          echo "LISTENER_RULE_ARN=$LISTENER_RULE_ARN" >> $GITHUB_ENV
-          echo "CURRENT_TG=$CURRENT_TG" >> $GITHUB_ENV
-          echo "NEW_TG=$NEW_TG" >> $GITHUB_ENV
+          LB_ARN=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?starts_with(LoadBalancerName, 'delius-jitbit-lb')].LoadBalancerArn" --output text)
+          LISTENER_ARN=$(aws elbv2 describe-listeners --load-balancer-arn "$LB_ARN" --query "Listeners[0].ListenerArn" --output text)
+          LISTENER_RULE_ARN=$(aws elbv2 describe-rules --listener-arn "$LISTENER_ARN" --query "Rules[?Priority=='20'].RuleArn" --output text)
 
-      - name: Switch target group
-        run: |
           aws elbv2 modify-rule --rule-arn "$LISTENER_RULE_ARN" --actions Type=forward,TargetGroupArn=arn:aws:elasticloadbalancing:eu-west-2:${{ vars.AWS_ACCOUNT_ID }}:targetgroup/$NEW_TG
 
       - name: Update SSM parameter
@@ -199,10 +195,8 @@ jobs:
           BLUE_GREEN=$(aws ssm get-parameter --name "/blue_green" --query "Parameter.Value" --output text)
 
           if [ "$BLUE_GREEN" == "blue" ]; then
-            CLUSTER_NAME="hmpps-${{ github.event.inputs.environment }}-delius-jitbit-green"
             NEW_BLUE_GREEN="green"
           elif [ "$BLUE_GREEN" == "green" ]; then
-            CLUSTER_NAME="hmpps-${{ github.event.inputs.environment }}-delius-jitbit-blue"
             NEW_BLUE_GREEN="blue"
           fi
 
