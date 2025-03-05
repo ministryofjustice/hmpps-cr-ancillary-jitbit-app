@@ -42,12 +42,8 @@ module "container_blue" {
   }
   secrets = [
     {
-      name      = "empty"
-      valueFrom = "empty"
-    },
-    {
-      name      = "empty2"
-      valueFrom = "empty2"
+      name      = "blue_green"
+      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/blue_green"
     }
     # {
     #   name      = "ConnectionStrings__DBConnectionString"
@@ -154,12 +150,8 @@ module "container_green" {
   }
   secrets = [
     {
-      name      = "empty"
-      valueFrom = "empty"
-    },
-    {
-      name      = "empty2"
-      valueFrom = "empty2"
+      name      = "blue_green"
+      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/blue_green"
     }
     # {
     #   name      = "ConnectionStrings__DBConnectionString"
