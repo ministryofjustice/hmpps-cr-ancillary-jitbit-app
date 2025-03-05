@@ -119,7 +119,7 @@ jobs:
         run: |
           set -e
 
-          BLUE_GREEN=$(aws ssm get-parameter --name "/blue_green" --query "Parameter.Value" --output text)
+          BLUE_GREEN=$(aws ssm get-parameter --name "/blue_green" --query "Parameter.Value" --output text --region eu-west-2)
 
           # check prep cluster not current
           if [ "$BLUE_GREEN" == "blue" ]; then
@@ -129,7 +129,7 @@ jobs:
           fi
 
           echo "Fetching running tasks in cluster: $CLUSTER_NAME"
-          TASK_ARNS=$(aws ecs list-tasks --cluster "$CLUSTER_NAME" --query "taskArns" --output text)
+          TASK_ARNS=$(aws ecs list-tasks --cluster "$CLUSTER_NAME" --query "taskArns" --output text --region eu-west-2)
 
           if [ -z "$TASK_ARNS" ]; then
             echo "No running tasks found in cluster $CLUSTER_NAME"
@@ -138,7 +138,7 @@ jobs:
 
           for TASK_ARN in $TASK_ARNS; do
             echo "Checking health for task: $TASK_ARN"
-            HEALTH_STATUS=$(aws ecs describe-tasks --cluster "$CLUSTER_NAME" --tasks "$TASK_ARN" --query "tasks[*].healthStatus" --output text)
+            HEALTH_STATUS=$(aws ecs describe-tasks --cluster "$CLUSTER_NAME" --tasks "$TASK_ARN" --query "tasks[*].healthStatus" --output text --region eu-west-2)
 
             if [ "$HEALTH_STATUS" != "HEALTHY" ]; then
               echo "Task $TASK_ARN is not healthy!"
