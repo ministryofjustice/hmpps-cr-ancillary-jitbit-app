@@ -12,7 +12,11 @@ COPY ./debian-testing.sources /etc/apt/sources.list.d/debian-testing.sources
 COPY ./default-release /etc/apt/apt.conf.d/default-release
 COPY ./testing.pref /etc/apt/preferences.d/testing.pref
 
-RUN apt update && apt install -t testing zlib1g-dev -y
+RUN apt update && \
+    apt install -t testing zlib1g-dev -y && \
+    apt install -t testing libpam0g libpam-modules libpam-runtime -y && \
+    apt install -t testing gnutls-bin -y && \
+    apt install -t testing perl-base perl perl-modules-5.40 -y
 
 # set timezone
 ENV TZ="Europe/London"
