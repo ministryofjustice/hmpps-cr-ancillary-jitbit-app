@@ -85,28 +85,27 @@ jobs:
         run: |
           docker load --input /tmp/jitbit-image-${{ inputs.jitbit_version }}-${{ github.run_id }}.tar
 
-      # - name: Trivy scan
-      #   id: trivy
-      #   uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0
-      #   with:
-      #     format: "sarif"
-      #     limit-severities-for-sarif: "true"
-      #     severity: "MEDIUM,HIGH,CRITICAL"
-      #     image-ref: "delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}"
-      #     exit-code: "1"
-      #     scan-type: "image"
-      #     trivyignores: ".trivyignore"
-      #     ignore-unfixed: "true"
-      #     output: "trivy-results.sarif"
+      - name: Trivy scan
+        id: trivy
+        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0
+        with:
+          format: "table"
+          severity: "MEDIUM,HIGH,CRITICAL"
+          image-ref: "delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}"
+          exit-code: "1"
+          scan-type: "image"
+          trivyignores: ".trivyignore"
+          ignore-unfixed: "true"
+      
 
-      - name: Trivy vulnerability scan (table output)
-        run: |
-          trivy image \
-            --format table \
-            --severity MEDIUM,HIGH,CRITICAL \
-            --ignore-unfixed \
-            --exit-code 0 \
-            delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}
+      # - name: Trivy vulnerability scan (table output)
+      #   run: |
+      #     trivy image \
+      #       --format table \
+      #       --severity MEDIUM,HIGH,CRITICAL \
+      #       --ignore-unfixed \
+      #       --exit-code 0 \
+      #       delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}
 
       # - name: Slack notification if vulnerabilities found
       #   if: failure()
