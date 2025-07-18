@@ -27,7 +27,7 @@ RUN rm /etc/localtime && \
 ENV DOTNET_URLS=http://+:5000
 
 # COPY in app
-# COPY ./app /jitbit
+COPY ./app /jitbit
 
 # Set user
 RUN adduser --disabled-password appuser -u 1001 && \
