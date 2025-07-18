@@ -15,8 +15,8 @@ COPY ./testing.pref /etc/apt/preferences.d/testing.pref
 RUN apt update && \
     apt install -t testing zlib1g-dev -y && \
     apt install -t testing libpam0g libpam-modules libpam-runtime -y && \
-    apt install -t testing libgnutls30 gnutls-bin -y && \
-    apt install -y -t testing perl-base perl perl-modules-5.40
+    apt install -t testing gnutls-bin -y && \
+    apt install -t testing perl-base perl perl-modules-5.40 -y
 
 # set timezone
 ENV TZ="Europe/London"
@@ -27,7 +27,7 @@ RUN rm /etc/localtime && \
 ENV DOTNET_URLS=http://+:5000
 
 # COPY in app
-COPY ./app /jitbit
+# COPY ./app /jitbit
 
 # Set user
 RUN adduser --disabled-password appuser -u 1001 && \
