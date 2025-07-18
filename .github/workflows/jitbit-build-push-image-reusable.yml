@@ -89,85 +89,77 @@ jobs:
         id: trivy
         uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0
         with:
-          format: "table"
+          format: "sarif"
+          limit-severities-for-sarif: "true"
           severity: "MEDIUM,HIGH,CRITICAL"
           image-ref: "delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}"
           exit-code: "1"
           scan-type: "image"
           trivyignores: ".trivyignore"
           ignore-unfixed: "true"
-      
+          output: "trivy-results.sarif"
 
-      # - name: Trivy vulnerability scan (table output)
-      #   run: |
-      #     trivy image \
-      #       --format table \
-      #       --severity MEDIUM,HIGH,CRITICAL \
-      #       --ignore-unfixed \
-      #       --exit-code 0 \
-      #       delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}
+      - name: Slack notification if vulnerabilities found
+        if: failure()
+        run: |
+          curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":x: Trivy :trivy: Scan Found Security Advisories"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"Image tag: delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}"},"accessory":{"type":"button","text":{"type":"plain_text","text":":github:    View Workflow Job","emoji":true},"value":"view_job","url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}","action_id":"button-action"}},{"type":"section","text":{"type":"mrkdwn","text":"Please check the security tab for details :arrow_right: "},"accessory":{"type":"button","text":{"type":"plain_text","text":":github:       View Security Tab","emoji":true},"value":"view_sec_tab","url":"${{ github.server_url }}/${{ github.repository }}/security/code-scanning","action_id":"button-action"}}]}' ${{ secrets.JITBIT_ALERTS_NON_PROD_CHANNEL_WEBHOOK }}
 
-      # - name: Slack notification if vulnerabilities found
-      #   if: failure()
-      #   run: |
-      #     curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":x: Trivy :trivy: Scan Found Security Advisories"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"Image tag: delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}"},"accessory":{"type":"button","text":{"type":"plain_text","text":":github:    View Workflow Job","emoji":true},"value":"view_job","url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}","action_id":"button-action"}},{"type":"section","text":{"type":"mrkdwn","text":"Please check the security tab for details :arrow_right: "},"accessory":{"type":"button","text":{"type":"plain_text","text":":github:       View Security Tab","emoji":true},"value":"view_sec_tab","url":"${{ github.server_url }}/${{ github.repository }}/security/code-scanning","action_id":"button-action"}}]}' ${{ secrets.JITBIT_ALERTS_NON_PROD_CHANNEL_WEBHOOK }}
-          
-      # - name: Upload Trivy scan results to GitHub Security tab
-      #   uses: github/codeql-action/upload-sarif@v3
-      #   if: always()
-      #   with:
-      #     sarif_file: "trivy-results.sarif"
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
 
-  # push-image:
-  #   name: Publish image
-  #   needs: [build-image]
-  #   permissions:
-  #     id-token: write
-  #     contents: write
-  #   runs-on: ubuntu-latest
-  #   outputs:
-  #     new_tag: ${{ steps.bump-version.outputs.new_tag }}
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
+  push-image:
+    name: Publish image
+    needs: [build-image]
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      new_tag: ${{ steps.bump-version.outputs.new_tag }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-  #     - name: Download Artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: jitbit-image-${{ inputs.jitbit_version }}-${{ github.run_id }}
-  #         path: /tmp
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: jitbit-image-${{ inputs.jitbit_version }}-${{ github.run_id }}
+          path: /tmp
 
-  #     - name: Configure AWS Credentials
-  #       uses: aws-actions/configure-aws-credentials@v4.0.1
-  #       with:
-  #         role-to-assume: "arn:aws:iam::${{ vars.IMG_BUILD_PUSH_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
-  #         role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_id }}-${{ github.run_attempt }}"
-  #         aws-region: "eu-west-2"
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4.0.1
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.IMG_BUILD_PUSH_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+          role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_id }}-${{ github.run_attempt }}"
+          aws-region: "eu-west-2"
 
-  #     - name: Load image from artifact
-  #       run: |
-  #         docker load --input /tmp/jitbit-image-${{ inputs.jitbit_version }}-${{ github.run_id }}.tar
+      - name: Load image from artifact
+        run: |
+          docker load --input /tmp/jitbit-image-${{ inputs.jitbit_version }}-${{ github.run_id }}.tar
 
-  #     - name: Tag image with latest
-  #       if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) || github.event.ref == 'refs/heads/main'
-  #       run: |
-  #         docker tag delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }} ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-latest
+      - name: Tag image with latest
+        if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) || github.event.ref == 'refs/heads/main'
+        run: |
+          docker tag delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }} ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-latest
 
-  #     - name: Tag image with github run id
-  #       run: |
-  #         docker tag delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }} ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}
+      - name: Tag image with github run id
+        run: |
+          docker tag delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }} ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}
 
-  #     - name: Login to ECR
-  #       run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+      - name: Login to ECR
+        run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
-  #     - name: Push images to ECR
-  #       run: docker push --all-tags ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo
+      - name: Push images to ECR
+        run: docker push --all-tags ${{ secrets.CORE_SHARED_SERVICES_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/delius-jitbit-ecr-repo
 
-  #     - name: Output image tags created (run id)
-  #       run: echo "${{ inputs.jitbit_version }}-${{ github.run_id }}"
+      - name: Output image tags created (run id)
+        run: echo "${{ inputs.jitbit_version }}-${{ github.run_id }}"
 
-  #     - name: Output image tags created (latest)
-  #       if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) || github.event.ref == 'refs/heads/main'
-  #       run: echo "${{ inputs.jitbit_version }}-latest"
+      - name: Output image tags created (latest)
+        if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) || github.event.ref == 'refs/heads/main'
+        run: echo "${{ inputs.jitbit_version }}-latest"
