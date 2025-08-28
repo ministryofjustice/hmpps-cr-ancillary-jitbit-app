@@ -20,9 +20,9 @@ jobs:
           - environment: preproduction
             image_tag: 11.14.1-latest
           - environment: production
-            image_tag: 11.13.1-latest
+            image_tag: 11.14.1-latest
           - environment: test
-            image_tag: 11.13.1-latest
+            image_tag: 11.14.1-latest
     with:
       environment: ${{ matrix.environment }}
       image_tag: ${{ matrix.image_tag }}
