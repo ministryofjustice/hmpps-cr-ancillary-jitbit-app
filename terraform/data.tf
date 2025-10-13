@@ -26,6 +26,14 @@ data "aws_lb_target_group" "service" {
   name = var.target_group_name
 }
 
+data "aws_lb_target_group" "blue" {
+  name = "${var.target_group_name}-blue"
+}
+
+data "aws_lb_target_group" "green" {
+  name = "${var.target_group_name}-green"
+}
+
 data "aws_secretsmanager_secret" "connection_string" {
   name = "${local.app_name}-app-connection-string${var.suffix}"
 }
