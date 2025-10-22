@@ -57,7 +57,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    if: (github.event_name == 'pull_request') || github.event.ref == 'refs/heads/main'
+    if: (github.event_name == 'pull_request
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -102,7 +102,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    if: needs.plan.outputs.plan_exitcode == '2' && ((github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) || github.event.ref == 'refs/heads/main' || inputs.environment == 'sandbox')
+    if: needs.plan.outputs.plan_exitcode == '2'
     environment: ${{ inputs.environment }}
     steps:
       - name: Checkout Code
@@ -137,28 +137,28 @@ jobs:
           echo "SERVICE_ARN=$(terraform output -raw ecs_service_arn)" >> $GITHUB_OUTPUT
 
 
-      - name: Trigger new ECS service deployment
-        run: |
-          aws ecs update-service --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --service ${{ steps.deploy.outputs.SERVICE_ARN }} --force-new-deployment
+      # - name: Trigger new ECS service deployment
+      #   run: |
+      #     aws ecs update-service --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --service ${{ steps.deploy.outputs.SERVICE_ARN }} --force-new-deployment
 
-      - name: Ensure service stable
-        run: |
-          aws ecs wait services-stable --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --services ${{ steps.deploy.outputs.SERVICE_ARN}}
+      # - name: Ensure service stable
+      #   run: |
+      #     aws ecs wait services-stable --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --services ${{ steps.deploy.outputs.SERVICE_ARN}}
 
-      - name: Update listener forwarding rule
-        run: |
-          aws elbv2 modify-listener --listener-arn ${{ steps.deploy.outputs.LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ steps.deploy.outputs.TARGET_GROUP_ARN }}
+      # - name: Update listener forwarding rule
+      #   run: |
+      #     aws elbv2 modify-listener --listener-arn ${{ steps.deploy.outputs.LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ steps.deploy.outputs.TARGET_GROUP_ARN }}
 
-      - name: Update SSM parameter
-        run: |
-          aws ssm put-parameter --name "/delius-jitbit/blue-green-active-colour" --value ${{ inputs.active_deployment_colour }} --type "String" --overwrite
+      # - name: Update SSM parameter
+      #   run: |
+      #     aws ssm put-parameter --name "/delius-jitbit/blue-green-active-colour" --value ${{ inputs.active_deployment_colour }} --type "String" --overwrite
 
-      - name: Alert Slack failure
-        if: "${{ failure() && github.ref == 'refs/heads/main' }}"
-        run: |
-          curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":fail: Deployment Failed"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"Deployment to the ${{ inputs.environment }} account failed"},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
+      # - name: Alert Slack failure
+      #   if: "${{ failure() && github.ref == 'refs/heads/main' }}"
+      #   run: |
+      #     curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":fail: Deployment Failed"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"Deployment to the ${{ inputs.environment }} account failed"},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
 
-      - name: Alert Slack Success
-        if: "${{ success() && github.ref == 'refs/heads/main' }}"
-        run: |
-          curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":white_check_mark: Deployment Succeeded"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"TF Apply Succeeded and the Service is stable in the ${{ inputs.environment }} account."},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
+      # - name: Alert Slack Success
+      #   if: "${{ success() && github.ref == 'refs/heads/main' }}"
+      #   run: |
+      #     curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":white_check_mark: Deployment Succeeded"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"TF Apply Succeeded and the Service is stable in the ${{ inputs.environment }} account."},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
