@@ -69,7 +69,7 @@ module "blue_deploy" {
   count = var.active_deployment_colour != null && var.blue_image_tag != null ? 1 : 0
 
   source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=v4.3.0"
-  container_definitions = module.container.json_encoded_list
+  container_definitions = module.blue_container[0].json_encoded_list
   cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}"
   name                  = "${local.container_name}-blue"
 
@@ -173,7 +173,7 @@ module "green_deploy" {
   count = var.active_deployment_colour != null && var.green_image_tag != null ? 1 : 0
 
   source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=v4.3.0"
-  container_definitions = module.container.json_encoded_list
+  container_definitions = module.green_container[0].json_encoded_list
   cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}"
   name                  = "${local.container_name}-green"
 

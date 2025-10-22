@@ -2,6 +2,10 @@ output "ecs_cluster_arn" {
   value = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}"
 }
 
-output "ecs_service_arn" {
-  value = module.deploy.service_arn
+output "ecs_service_arn_blue" {
+  value = module.blue_deploy[0].service_arn
+}
+
+output "ecs_service_arn_green" {
+  value = module.green_deploy[0].service_arn
 }
