@@ -14,10 +14,10 @@ output "ecs_service_arn_green" {
   value = length(module.green_deploy[0]) > 0 ? module.green_deploy[0].service_arn : null
 }
 
-output "blue_target_group_arn" {
+output "target_group_arn_blue" {
   value = data.aws_lb_target_group.blue_target_group.arn
 }
 
-output "green_target_group_arn" {
+output "target_group_arn_green" {
   value = data.aws_lb_target_group.green_target_group.arn
 }
