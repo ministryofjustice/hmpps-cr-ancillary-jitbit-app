@@ -210,3 +210,18 @@ module "green_deploy" {
   ignore_changes       = false
   force_new_deployment = false
 }
+
+resource "aws_ssm_parameter" "ecs_scaling_state" {
+  name  = "/ecs/service/hmpps-${var.environment}-${local.app_name}${var.suffix}/scaling-state"
+  type  = "String"
+  value = "disabled"
+  lifecycle {
+    ignore_changes = [
+      value
+    ]
+  }
+}
+
+data "aws_ssm_parameter" "ecs_scaling_state" {
+  name = aws_ssm_parameter.ecs_scaling_state.name
+}

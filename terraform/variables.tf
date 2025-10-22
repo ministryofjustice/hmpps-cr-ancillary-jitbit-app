@@ -18,6 +18,11 @@ variable "suffix" {
   default     = ""
 }
 
+variable "lb_name" {
+  type        = string
+  description = "Name of the loadbalancer"
+}
+
 variable "target_group_name" {
   type        = string
   description = "Name of the target group to register the service with"

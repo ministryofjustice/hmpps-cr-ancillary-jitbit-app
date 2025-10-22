@@ -41,10 +41,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check if active_deployment_colour input is "blue" or "green"
-        if: ${{ github.event.inputs.active_deployment_colour != 'blue' && github.event.inputs.active_deployment_colour != 'green' }}
+        env:
+          ACTIVE_COLOUR: ${{ github.event.inputs.active_deployment_colour }}
         run: |
-          echo "Invalid value for input 'active_deployment_colour', must be either 'blue' or 'green', value given: ${{ github.event.inputs.active_deployment_colour }}"
-          exit 1
+          if [[ "$ACTIVE_COLOUR" != "blue" && "$ACTIVE_COLOUR" != "green" ]]; then
+            echo "Invalid value for input 'active_deployment_colour'. Must be either 'blue' or 'green'."
+            echo "Value provided: '$ACTIVE_COLOUR'"
+            exit 1
+          else
+            echo "Input is valid: '$ACTIVE_COLOUR'"
+          fi
 
   plan:
     name: Plan - ${{ inputs.environment }}
@@ -133,24 +139,28 @@ jobs:
           terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl
           terraform apply -auto-approve -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="blue_image_tag=$(echo ${{ env.BLUE_IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')" -var="green_image_tag=$(echo ${{ env.GREEN_IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')" -var="active_deployment_colour=${{ inputs.active_deployment_colour }}"
           echo "CLUSTER_ARN=$(terraform output -raw ecs_cluster_arn)" >> $GITHUB_OUTPUT
-          echo "SERVICE_ARN=$(terraform output -raw ecs_service_arn)" >> $GITHUB_OUTPUT
+          echo "LISTENER_ARN=$(terraform output -raw listener_arn))" >> $GITHUB_OUTPUT
+          echo "BLUE_SERVICE_ARN=$(terraform output -raw blue_ecs_service_arn)" >> $GITHUB_OUTPUT
+          echo "GREEN_SERVICE_ARN=$(terraform output -raw green_ecs_service_arn)" >> $GITHUB_OUTPUT
+          echo "TARGET_GROUP_ARN=$(terraform output -raw output ${{ inputs.active_deployment_colour }}_target_group_arn)" >> $GITHUB_OUTPUT
 
+      - name: Trigger new blue ECS service deployment
+        if: ${{ github.event.inputs.blue_image_tag != '' }}
+        run: |
+          aws ecs update-service --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --service ${{ steps.deploy.outputs.BLUE_SERVICE_ARN }} --force-new-deployment
 
-      # - name: Trigger new ECS service deployment
-      #   run: |
-      #     aws ecs update-service --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --service ${{ steps.deploy.outputs.SERVICE_ARN }} --force-new-deployment
+      - name: Trigger new green ECS service deployment
+        if: ${{ github.event.inputs.green_image_tag != '' }}
+        run: |
+          aws ecs update-service --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --service ${{ steps.deploy.outputs.GREEN_SERVICE_ARN }} --force-new-deployment
 
-      # - name: Ensure service stable
-      #   run: |
-      #     aws ecs wait services-stable --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --services ${{ steps.deploy.outputs.SERVICE_ARN}}
+      - name: Update listener forwarding rule
+        run: |
+          aws elbv2 modify-listener --listener-arn ${{ steps.deploy.outputs.LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ steps.deploy.outputs.TARGET_GROUP_ARN }}
 
-      # - name: Update listener forwarding rule
-      #   run: |
-      #     aws elbv2 modify-listener --listener-arn ${{ steps.deploy.outputs.LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ steps.deploy.outputs.TARGET_GROUP_ARN }}
-
-      # - name: Update SSM parameter
-      #   run: |
-      #     aws ssm put-parameter --name "/delius-jitbit/blue-green-active-colour" --value ${{ inputs.active_deployment_colour }} --type "String" --overwrite
+      - name: Update SSM parameter
+        run: |
+          aws ssm put-parameter --name "/delius-jitbit/blue-green-active-colour" --value ${{ inputs.active_deployment_colour }} --type "String" --overwrite
 
       # - name: Alert Slack failure
       #   if: "${{ failure() && github.ref == 'refs/heads/main' }}"
