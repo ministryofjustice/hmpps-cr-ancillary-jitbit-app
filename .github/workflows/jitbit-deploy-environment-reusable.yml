@@ -140,9 +140,9 @@ jobs:
           terraform apply -auto-approve -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="blue_image_tag=$(echo ${{ env.BLUE_IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')" -var="green_image_tag=$(echo ${{ env.GREEN_IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')" -var="active_deployment_colour=${{ inputs.active_deployment_colour }}"
           echo "CLUSTER_ARN=$(terraform output -raw ecs_cluster_arn)" >> $GITHUB_OUTPUT
           echo "LISTENER_ARN=$(terraform output -raw listener_arn))" >> $GITHUB_OUTPUT
-          echo "BLUE_SERVICE_ARN=$(terraform output -raw blue_ecs_service_arn)" >> $GITHUB_OUTPUT
-          echo "GREEN_SERVICE_ARN=$(terraform output -raw green_ecs_service_arn)" >> $GITHUB_OUTPUT
-          echo "TARGET_GROUP_ARN=$(terraform output -raw output ${{ inputs.active_deployment_colour }}_target_group_arn)" >> $GITHUB_OUTPUT
+          echo "BLUE_SERVICE_ARN=$(terraform output -raw ecs_service_arn_blue)" >> $GITHUB_OUTPUT
+          echo "GREEN_SERVICE_ARN=$(terraform output -raw ecs_service_arn_green)" >> $GITHUB_OUTPUT
+          echo "TARGET_GROUP_ARN=$(terraform output -raw output target_group_arn_${{ inputs.active_deployment_colour }})" >> $GITHUB_OUTPUT
 
       - name: Trigger new blue ECS service deployment
         if: ${{ github.event.inputs.blue_image_tag != '' }}
