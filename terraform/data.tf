@@ -1,3 +1,7 @@
+locals {
+  blue_target_group_name = "${var.target_group_name}-blue"
+  green_target_group_name = "${var.target_group_name}-green"
+}
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
@@ -22,8 +26,12 @@ data "aws_subnet" "private_subnets_c" {
   }
 }
 
-data "aws_lb_target_group" "service" {
-  name = var.target_group_name
+data "aws_lb_target_group" "blue_target_group" {
+  name = local.blue_target_group_name
+}
+
+data "aws_lb_target_group" "green_target_group" {
+  name = local.green_target_group_name
 }
 
 data "aws_secretsmanager_secret" "connection_string" {

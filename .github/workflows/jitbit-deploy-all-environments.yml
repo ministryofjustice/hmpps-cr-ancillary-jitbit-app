@@ -14,16 +14,28 @@ jobs:
       matrix:
         include:
           - environment: sandbox
-            image_tag: 11.14.3-latest
+            blue_image_tag: 11.14.3-latest
+            green_image_tag: ""
+            active_deployment_colour: blue
           - environment: development
-            image_tag: 11.14.1-latest
+            blue_image_tag: 11.14.1-latest
+            green_image_tag: ""
+            active_deployment_colour: blue
           - environment: preproduction
-            image_tag: 11.14.1-latest
+            blue_image_tag: 11.14.1-latest
+            green_image_tag: ""
+            active_deployment_colour: blue
           - environment: production
-            image_tag: 11.14.1-latest
+            blue_image_tag: 11.14.1-latest
+            green_image_tag: ""
+            active_deployment_colour: blue
           - environment: test
-            image_tag: 11.14.1-latest
+            blue_image_tag: 11.14.1-latest
+            green_image_tag: ""
+            active_deployment_colour: blue
     with:
       environment: ${{ matrix.environment }}
-      image_tag: ${{ matrix.image_tag }}
+      blue_image_tag: ${{ matrix.blue_image_tag }}
+      green_image_tag: ${{ matrix.green_image_tag }}
+      active_deployment_colour: ${{ matrix.active_deployment_colour }}
     secrets: inherit

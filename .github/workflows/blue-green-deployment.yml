@@ -7,14 +7,14 @@ on:
           type: choice
           options:
             - "sandbox"
-            - "development"
-            - "test"
-            - "preproduction"
-            - "production"
-        image_tag:
+        blue_image_tag:
             required: false
             type: string
-            default: "latest"
+            default: ""
+        green_image_tag:
+            required: true
+            type: string
+            default: ""
         terraform_version:
             required: false
             type: string

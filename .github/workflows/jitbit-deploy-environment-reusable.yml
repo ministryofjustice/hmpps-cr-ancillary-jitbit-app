@@ -5,7 +5,13 @@ on:
       environment:
         required: true
         type: string
-      image_tag:
+      blue_image_tag:
+        required: true
+        type: string
+      green_image_tag:
+        required: true
+        type: string
+      active_deployment_colour:
         required: true
         type: string
       terraform_version:
@@ -17,7 +23,13 @@ on:
       environment:
         required: true
         type: string
-      image_tag:
+      blue_image_tag:
+        required: true
+        type: string
+      green_image_tag:
+        required: true
+        type: string
+      active_deployment_colour:
         required: true
         type: string
       terraform_version:
@@ -25,6 +37,15 @@ on:
         type: string
         default: "~1.13"
 jobs:
+  validate-input:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if active_deployment_colour input is "blue" or "green"
+        if: ${{ github.event.inputs.active_deployment_colour != 'blue' && github.event.inputs.active_deployment_colour != 'green' }}
+        run: |
+          echo "Invalid value for input 'active_deployment_colour', must be either 'blue' or 'green', value given: ${{ github.event.inputs.active_deployment_colour }}"
+          exit 1
+
   plan:
     name: Plan - ${{ inputs.environment }}
     runs-on: ubuntu-latest
@@ -68,8 +89,8 @@ jobs:
           set -o pipefail
           exitcode=0
           tfargs="-detailed-exitcode"
-          echo "terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=${{ inputs.image_tag }}" $tfargs | tee tfplan.txt || exitcode=$?"
-          terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=${{ inputs.image_tag }}" $tfargs | tee tfplan.txt || exitcode=$?
+          echo "terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="blue_image_tag=${{ inputs.blue_image_tag }}" -var="green_image_tag=${{ inputs.green_image_tag }}" -var="active_deployment_colour=${{ inputs.active_deployment_colour }}" $tfargs | tee tfplan.txt || exitcode=$?"
+          terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="blue_image_tag=${{ inputs.blue_image_tag }}" -var="green_image_tag=${{ inputs.green_image_tag }}" -var="active_deployment_colour=${{ inputs.active_deployment_colour }}" $tfargs | tee tfplan.txt || exitcode=$?
           echo "exitcode=${exitcode}"  # 0=clean plan, 1=error, 2=stuff in plan
           echo "exitcode=${exitcode}" >> $GITHUB_OUTPUT
           (( exitcode == 1 )) && exit 1 || exit 0
@@ -105,14 +126,16 @@ jobs:
       - name: Deploy to ECS
         id: deploy
         env:
-          IMAGE_TAG: ${{ inputs.image_tag }}
+          BLUE_IMAGE_TAG: ${{ inputs.blue_image_tag }}
+          GREEN_IMAGE_TAG: ${{ inputs.green_image_tag }}
         run: |
           set -e
           cd terraform
           terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl
-          terraform apply -auto-approve -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=$(echo ${{ env.IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')"
+          terraform apply -auto-approve -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="blue_image_tag=$(echo ${{ env.BLUE_IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')" -var="green_image_tag=$(echo ${{ env.GREEN_IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')" -var="active_deployment_colour=${{ inputs.active_deployment_colour }}"
           echo "CLUSTER_ARN=$(terraform output -raw ecs_cluster_arn)" >> $GITHUB_OUTPUT
           echo "SERVICE_ARN=$(terraform output -raw ecs_service_arn)" >> $GITHUB_OUTPUT
+
 
       - name: Trigger new ECS service deployment
         run: |
@@ -121,7 +144,15 @@ jobs:
       - name: Ensure service stable
         run: |
           aws ecs wait services-stable --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --services ${{ steps.deploy.outputs.SERVICE_ARN}}
-      
+
+      - name: Update listener forwarding rule
+        run: |
+          aws elbv2 modify-listener --listener-arn ${{ steps.deploy.outputs.LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ steps.deploy.outputs.TARGET_GROUP_ARN }}
+
+      - name: Update SSM parameter
+        run: |
+          aws ssm put-parameter --name "/delius-jitbit/blue-green-active-colour" --value ${{ inputs.active_deployment_colour }} --type "String" --overwrite
+
       - name: Alert Slack failure
         if: "${{ failure() && github.ref == 'refs/heads/main' }}"
         run: |
