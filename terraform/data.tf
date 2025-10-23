@@ -1,5 +1,5 @@
 locals {
-  blue_target_group_name = "${var.target_group_name}-blue"
+  blue_target_group_name  = "${var.target_group_name}-blue"
   green_target_group_name = "${var.target_group_name}-green"
 }
 data "aws_caller_identity" "current" {}
