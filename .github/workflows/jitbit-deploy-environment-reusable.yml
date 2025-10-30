@@ -15,11 +15,11 @@ on:
       blue_image_tag:
         required: false
         type: string
-        default: ""
+        default: null
       green_image_tag:
         required: false
         type: string
-        default: ""
+        default: null
       active_deployment_colour:
         required: false
         type: string
@@ -276,6 +276,11 @@ jobs:
         if: ${{ inputs.environment == 'sandbox' }} && ${{ steps.ecs-deploy-sandbox-green.outcome == 'success' }} 
         run: |
           aws ecs wait services-stable --cluster ${{ steps.deploy-sandbox.outputs.CLUSTER_ARN }} --services ${{ steps.deploy-sandbox.outputs.GREEN_SERVICE_ARN }}
+      
+      - name: Update listener forwarding rule
+        if: ${{ inputs.environment == 'sandbox' }}
+        run: |
+          aws elbv2 modify-listener --listener-arn ${{ steps.deploy-sandbox.outputs.LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ steps.deploy-sandbox.outputs.TARGET_GROUP_ARN }}
 
       - name: Alert Slack failure
         if: "${{ failure() && github.ref == 'refs/heads/main' }}"

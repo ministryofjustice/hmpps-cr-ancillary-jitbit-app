@@ -18,11 +18,11 @@ variable "active_deployment_colour" {
 variable "blue_image_tag" {
   type        = string
   description = "Tag of the application image to deploy for 'blue' service"
-  default     = null
+  default     = ""
 }
 
 variable "green_image_tag" {
   type        = string
   description = "Tag of the application image to deploy for 'green' service"
-  default     = null
+  default     = ""
 }

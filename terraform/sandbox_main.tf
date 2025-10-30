@@ -1,5 +1,5 @@
 module "blue_container" {
-  count = var.sub_env == "sandbox" && var.active_deployment_colour != null && var.blue_image_tag != null ? 1 : 0
+  count = var.sub_env == "sandbox" && var.active_deployment_colour != "" && var.blue_image_tag != "" ? 1 : 0
 
   source    = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//container?ref=v4.3.0"
   name      = "${local.container_name}-blue"
@@ -61,7 +61,7 @@ module "blue_container" {
 }
 
 module "blue_deploy" {
-  count = var.sub_env == "sandbox" && var.active_deployment_colour != null && var.blue_image_tag != null ? 1 : 0
+  count = var.sub_env == "sandbox" && var.active_deployment_colour != "" && var.blue_image_tag != "" ? 1 : 0
 
   source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=v4.3.0"
   container_definitions = module.blue_container[0].json_encoded_list
@@ -103,7 +103,7 @@ module "blue_deploy" {
 }
 
 module "green_container" {
-  count = var.sub_env == "sandbox" && var.active_deployment_colour != null && var.green_image_tag != null ? 1 : 0
+  count = var.sub_env == "sandbox" && var.active_deployment_colour != "" && var.green_image_tag != "" ? 1 : 0
 
   source    = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//container?ref=v4.3.0"
   name      = "${local.container_name}-green"
@@ -165,7 +165,7 @@ module "green_container" {
 }
 
 module "green_deploy" {
-  count = var.sub_env == "sandbox" && var.active_deployment_colour != null && var.green_image_tag != null ? 1 : 0
+  count = var.sub_env == "sandbox" && var.active_deployment_colour != "" && var.green_image_tag != "" ? 1 : 0
 
   source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=v4.3.0"
   container_definitions = module.green_container[0].json_encoded_list
