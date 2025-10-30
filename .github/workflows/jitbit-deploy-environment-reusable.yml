@@ -15,11 +15,11 @@ on:
       blue_image_tag:
         required: false
         type: string
-        default: null
+        default: ""
       green_image_tag:
         required: false
         type: string
-        default: null
+        default: ""
       active_deployment_colour:
         required: false
         type: string
@@ -215,7 +215,7 @@ jobs:
 
       - name: Trigger new ECS service deployment (SANDBOX) (BLUE)
         id: ecs-deploy-sandbox-blue
-        if: ${{ inputs.environment == 'sandbox' }} && ${{ steps.deploy-sandbox.outputs.BLUE_SERVICE_ARN }} != null
+        if: ${{ inputs.environment == 'sandbox' }} && ${{ steps.deploy-sandbox.outputs.BLUE_SERVICE_ARN }} != ""
         env:
           CLUSTER_ARN: ${{ steps.deploy-sandbox.outputs.CLUSTER_ARN }}
           BLUE_SERVICE_ARN : ${{ steps.deploy-sandbox.outputs.BLUE_SERVICE_ARN }}
@@ -242,7 +242,7 @@ jobs:
 
       - name: Trigger new ECS service deployment (SANDBOX) (GREEN)
         id: ecs-deploy-sandbox-green
-        if: ${{ inputs.environment == 'sandbox' }} && ${{ steps.deploy-sandbox.outputs.GREEN_SERVICE_ARN }} != null
+        if: ${{ inputs.environment == 'sandbox' }} && ${{ steps.deploy-sandbox.outputs.GREEN_SERVICE_ARN }} != ""
         env:
           CLUSTER_ARN: ${{ steps.deploy-sandbox.outputs.CLUSTER_ARN }}
           GREEN_SERVICE_ARN : ${{ steps.deploy-sandbox.outputs.GREEN_SERVICE_ARN }}
