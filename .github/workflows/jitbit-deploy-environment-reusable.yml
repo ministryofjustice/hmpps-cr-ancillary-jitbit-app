@@ -215,7 +215,7 @@ jobs:
 
       - name: Trigger new ECS service deployment (SANDBOX) (BLUE)
         id: ecs-deploy-sandbox-blue
-        if: ${{ inputs.environment == 'sandbox' }} && ${{ steps.deploy-sandbox.outputs.BLUE_SERVICE_ARN }} != ""
+        if: ${{ inputs.environment == 'sandbox' && steps.deploy-sandbox.outputs.BLUE_SERVICE_ARN != '' }}
         env:
           CLUSTER_ARN: ${{ steps.deploy-sandbox.outputs.CLUSTER_ARN }}
           BLUE_SERVICE_ARN : ${{ steps.deploy-sandbox.outputs.BLUE_SERVICE_ARN }}
@@ -242,7 +242,7 @@ jobs:
 
       - name: Trigger new ECS service deployment (SANDBOX) (GREEN)
         id: ecs-deploy-sandbox-green
-        if: ${{ inputs.environment == 'sandbox' }} && ${{ steps.deploy-sandbox.outputs.GREEN_SERVICE_ARN }} != ""
+        if: ${{ inputs.environment == 'sandbox' && steps.deploy-sandbox.outputs.GREEN_SERVICE_ARN != '' }}
         env:
           CLUSTER_ARN: ${{ steps.deploy-sandbox.outputs.CLUSTER_ARN }}
           GREEN_SERVICE_ARN : ${{ steps.deploy-sandbox.outputs.GREEN_SERVICE_ARN }}
@@ -268,12 +268,12 @@ jobs:
           fi 
 
       - name: Ensure service stable (SANDBOX) (BLUE)
-        if: ${{ inputs.environment == 'sandbox' }} && ${{ steps.ecs-deploy-sandbox-blue.outcome == 'success' }} 
+        if: ${{ inputs.environment == 'sandbox' && steps.ecs-deploy-sandbox-blue.outcome == 'success' }} 
         run: |
           aws ecs wait services-stable --cluster ${{ steps.deploy-sandbox.outputs.CLUSTER_ARN }} --services ${{ steps.deploy-sandbox.outputs.BLUE_SERVICE_ARN }}
 
       - name: Ensure service stable (SANDBOX) (GREEN)
-        if: ${{ inputs.environment == 'sandbox' }} && ${{ steps.ecs-deploy-sandbox-green.outcome == 'success' }} 
+        if: ${{ inputs.environment == 'sandbox' && steps.ecs-deploy-sandbox-green.outcome == 'success' }} 
         run: |
           aws ecs wait services-stable --cluster ${{ steps.deploy-sandbox.outputs.CLUSTER_ARN }} --services ${{ steps.deploy-sandbox.outputs.GREEN_SERVICE_ARN }}
       
