@@ -195,7 +195,7 @@ jobs:
           echo "Task definition ARN: $TASK_DEF_ARN"
 
           IMAGE=$(aws ecs describe-task-definition --task-definition "$TASK_DEF_ARN" --query 'taskDefinition.containerDefinitions[0].image' --output text)
-          IMAGE_TAG=$(echo "$IMAGE" | awk -F: '{print $(NF-1) ":" $NF}')
+          IMAGE_TAG="${IMAGE##*:}"
 
           echo "Running ECS service image: $IMAGE"
 
@@ -223,11 +223,11 @@ jobs:
         run: |
           set -e
           BLUE_TASK_DEF_ARN=$(aws ecs describe-services --cluster ${{ env.CLUSTER_ARN }} --services ${{ env.BLUE_SERVICE_ARN }} --query 'services[0].taskDefinition' --output text)
-          echo "Task definition ARN: $TASK_DEF_ARN"
+          echo "Task definition ARN: $BLUE_TASK_DEF_ARN"
 
           # Get the image used by the container definition
           IMAGE=$(aws ecs describe-task-definition --task-definition "$BLUE_TASK_DEF_ARN" --query 'taskDefinition.containerDefinitions[0].image' --output text)
-          IMAGE_TAG=$(echo "$IMAGE" | awk -F: '{print $(NF-1) ":" $NF}')
+          IMAGE_TAG="${IMAGE##*:}"
 
           echo "Running ECS service image: $IMAGE"
 
@@ -250,11 +250,11 @@ jobs:
         run: |
           set -e
           GREEN_TASK_DEF_ARN=$(aws ecs describe-services --cluster ${{ env.CLUSTER_ARN }} --services ${{ env.GREEN_SERVICE_ARN }} --query 'services[0].taskDefinition' --output text)
-          echo "Task definition ARN: $TASK_DEF_ARN"
+          echo "Task definition ARN: $GREEN_TASK_DEF_ARN"
 
           # Get the image used by the container definition
           IMAGE=$(aws ecs describe-task-definition --task-definition "$GREEN_TASK_DEF_ARN" --query 'taskDefinition.containerDefinitions[0].image' --output text)
-          IMAGE_TAG=$(echo "$IMAGE" | awk -F: '{print $(NF-1) ":" $NF}')
+          IMAGE_TAG="${IMAGE##*:}"
 
           echo "Running ECS service image: $IMAGE"
 
