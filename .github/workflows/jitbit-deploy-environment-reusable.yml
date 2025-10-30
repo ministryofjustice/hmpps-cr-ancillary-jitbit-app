@@ -6,7 +6,7 @@ on:
         required: true
         type: string
       image_tag:
-        required: true
+        required: false
         type: string
       terraform_version:
         required: false
@@ -30,7 +30,7 @@ on:
         required: true
         type: string
       image_tag:
-        required: true
+        required: false
         type: string
       terraform_version:
         required: false
