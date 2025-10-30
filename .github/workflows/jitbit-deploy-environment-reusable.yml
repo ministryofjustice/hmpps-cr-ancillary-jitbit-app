@@ -128,13 +128,24 @@ jobs:
           terraform_version: "${{ inputs.terraform_version }}"
           terraform_wrapper: false
 
-      - name: Deploy to ECS
+      - name: Get currently running ECS images
+        id: get-task-image
+        run: |
+          CLUSTER_ARN=$(aws ecs describe-services \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE")
+
+          TASK_DEF_ARN=$(echo "$SERVICE_DESC" | jq -r '.services[0].taskDefinition')
+
+          echo "task_def_arn=$TASK_DEF_ARN" >> "$GITHUB_OUTPUT"
+      - name: Deploy blue to ECS
         id: deploy
         env:
           BLUE_IMAGE_TAG: ${{ inputs.blue_image_tag }}
           GREEN_IMAGE_TAG: ${{ inputs.green_image_tag }}
         run: |
           set -e
+
           cd terraform
           terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl
           terraform apply -auto-approve -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="blue_image_tag=$(echo ${{ env.BLUE_IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')" -var="green_image_tag=$(echo ${{ env.GREEN_IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')" -var="active_deployment_colour=${{ inputs.active_deployment_colour }}"
