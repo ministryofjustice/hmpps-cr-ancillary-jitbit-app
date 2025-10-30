@@ -133,7 +133,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    if: needs.plan.outputs.plan_exitcode == '2'
     environment: ${{ inputs.environment }}
     steps:
       - name: Checkout Code
