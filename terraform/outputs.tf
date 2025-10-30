@@ -3,5 +3,5 @@ output "ecs_cluster_arn" {
 }
 
 output "ecs_service_arn" {
-  value = module.deploy.service_arn
+  value =  var.sub_env != "sandbox" ? module.deploy[0].service_arn : null
 }
