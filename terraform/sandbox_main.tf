@@ -84,7 +84,7 @@ module "blue_deploy" {
   enable_execute_command = true
   service_load_balancers = [
     {
-      target_group_arn = data.aws_lb_target_group.sandbox_blue_target_group.arn
+      target_group_arn = data.aws_lb_target_group.sandbox_blue_target_group[0].arn
       container_name   = "${local.container_name}-blue"
       container_port   = 5000
     }
@@ -188,7 +188,7 @@ module "green_deploy" {
   enable_execute_command = true
   service_load_balancers = [
     {
-      target_group_arn = data.aws_lb_target_group.sandbox_green_target_group.arn
+      target_group_arn = data.aws_lb_target_group.sandbox_green_target_group[0].arn
       container_name   = "${local.container_name}-green"
       container_port   = 5000
     }

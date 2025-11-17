@@ -13,9 +13,11 @@ data "aws_lb_listener" "sandbox_lb_listener" {
 }
 
 data "aws_lb_target_group" "sandbox_blue_target_group" {
-  name = local.blue_target_group_name
+  count = var.sub_env == "sandbox" ? 1 : 0
+  name  = local.blue_target_group_name
 }
 
 data "aws_lb_target_group" "sandbox_green_target_group" {
+  count = var.sub_env == "sandbox" ? 1 : 0
   name = local.green_target_group_name
 }

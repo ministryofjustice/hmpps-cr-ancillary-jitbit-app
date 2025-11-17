@@ -11,9 +11,9 @@ output "ecs_service_arn_green" {
 }
 
 output "target_group_arn_blue" {
-  value = data.aws_lb_target_group.sandbox_blue_target_group.arn
+  value = var.sub_env == "sandbox" ? data.aws_lb_target_group.sandbox_blue_target_group[0].arn : ""
 }
 
 output "target_group_arn_green" {
-  value = data.aws_lb_target_group.sandbox_green_target_group.arn
+  value = var.sub_env == "sandbox" ? data.aws_lb_target_group.sandbox_green_target_group[0].arn : ""
 }
