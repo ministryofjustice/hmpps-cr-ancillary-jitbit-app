@@ -4,6 +4,7 @@ locals {
 }
 
 module "container" {
+  count     = var.environment != "sandbox" ? 1 : 0
   source    = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//container?ref=v4.3.0"
   name      = local.container_name
   image     = "374269020027.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${local.app_name}-ecr-repo:${var.image_tag}"
@@ -64,8 +65,9 @@ module "container" {
 }
 
 module "deploy" {
+  count                 = var.sub_env != "sandbox" ? 1 : 0
   source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=v4.3.0"
-  container_definitions = module.container.json_encoded_list
+  container_definitions = module.container[0].json_encoded_list
   cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}"
   name                  = local.container_name
 
@@ -85,7 +87,7 @@ module "deploy" {
   enable_execute_command = true
   service_load_balancers = [
     {
-      target_group_arn = data.aws_lb_target_group.service.arn
+      target_group_arn = data.aws_lb_target_group.service[0].arn
       container_name   = local.container_name
       container_port   = 5000
     }

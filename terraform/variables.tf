@@ -12,6 +12,15 @@ variable "environment" {
   }
 }
 
+variable "sub_env" {
+  type        = string
+  description = "Used to distinguish between envs in the same account e.g. dev and sandbox"
+  validation {
+    condition     = contains(["sandbox", "development", "test", "preproduction", "production"], var.sub_env)
+    error_message = "Valid values for sub_env are (sandbox, development, test, preproduction, production)"
+  }
+}
+
 variable "suffix" {
   type        = string
   description = "optional suffix for nonstandard environments"
