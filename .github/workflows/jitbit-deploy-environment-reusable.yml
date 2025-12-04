@@ -6,25 +6,64 @@ on:
         required: true
         type: string
       image_tag:
-        required: true
+        required: false
         type: string
       terraform_version:
         required: false
         type: string
         default: "~1.13"
+      blue_image_tag:
+        required: false
+        type: string
+        default: ""
+      green_image_tag:
+        required: false
+        type: string
+        default: ""
+      active_deployment_colour:
+        required: false
+        type: string
+        default: ""
   workflow_dispatch:
     inputs:
       environment:
         required: true
         type: string
       image_tag:
-        required: true
+        required: false
         type: string
       terraform_version:
         required: false
         type: string
         default: "~1.13"
+      blue_image_tag:
+        required: false
+        type: string
+        default: ""
+      green_image_tag:
+        required: false
+        type: string
+        default: ""
+      active_deployment_colour:
+        required: false
+        type: string
+        default: ""
 jobs:
+  validate-input-sandbox:
+    if: ${{ inputs.environment == 'sandbox' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if active_deployment_colour input is "blue" or "green"
+        env:
+          ACTIVE_COLOUR: ${{ github.event.inputs.active_deployment_colour }}
+        run: |
+          if [[ "$ACTIVE_COLOUR" != "blue" && "$ACTIVE_COLOUR" != "green" ]]; then
+            echo "Invalid value for input 'active_deployment_colour'. Must be either 'blue' or 'green'."
+            echo "Value provided: '$ACTIVE_COLOUR'"
+            exit 1
+          else
+            echo "Input is valid: '$ACTIVE_COLOUR'"
+          fi
   plan:
     name: Plan - ${{ inputs.environment }}
     runs-on: ubuntu-latest
@@ -36,7 +75,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    if: (github.event_name == 'pull_request') || github.event.ref == 'refs/heads/main'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -61,8 +99,9 @@ jobs:
           echo "terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl"
           terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl
       
-      - name: Terraform Plan
+      - name: Terraform Plan (Not Sandbox)
         id: plan
+        if: ${{ inputs.environment != 'sandbox' }}
         working-directory: terraform
         run: |
           set -o pipefail
@@ -74,6 +113,19 @@ jobs:
           echo "exitcode=${exitcode}" >> $GITHUB_OUTPUT
           (( exitcode == 1 )) && exit 1 || exit 0
 
+      - name: Terraform Plan (SANDBOX)
+        id: plan-sandbox
+        if: ${{ inputs.environment == 'sandbox' }}
+        working-directory: terraform
+        run: |
+          set -o pipefail
+          exitcode=0
+          tfargs="-detailed-exitcode"
+          echo "terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="blue_image_tag=${{ inputs.blue_image_tag }}" -var="green_image_tag=${{ inputs.green_image_tag }}" -var="active_deployment_colour=${{ inputs.active_deployment_colour }}" $tfargs | tee tfplan.txt || exitcode=$?"
+          terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="blue_image_tag=${{ inputs.blue_image_tag }}" -var="green_image_tag=${{ inputs.green_image_tag }}" -var="active_deployment_colour=${{ inputs.active_deployment_colour }}" $tfargs | tee tfplan.txt || exitcode=$?
+          echo "exitcode=${exitcode}"  # 0=clean plan, 1=error, 2=stuff in plan
+          echo "exitcode=${exitcode}" >> $GITHUB_OUTPUT
+          (( exitcode == 1 )) && exit 1 || exit 0
   deploy:
     name: Deploy - ${{ inputs.environment }}
     runs-on: ubuntu-latest
@@ -81,7 +133,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    if: needs.plan.outputs.plan_exitcode == '2' && ((github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) || github.event.ref == 'refs/heads/main' || inputs.environment == 'sandbox')
     environment: ${{ inputs.environment }}
     steps:
       - name: Checkout Code
@@ -104,6 +155,7 @@ jobs:
 
       - name: Deploy to ECS
         id: deploy
+        if: ${{ inputs.environment != 'sandbox' }}
         env:
           IMAGE_TAG: ${{ inputs.image_tag }}
         run: |
@@ -113,15 +165,123 @@ jobs:
           terraform apply -auto-approve -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="image_tag=$(echo ${{ env.IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')"
           echo "CLUSTER_ARN=$(terraform output -raw ecs_cluster_arn)" >> $GITHUB_OUTPUT
           echo "SERVICE_ARN=$(terraform output -raw ecs_service_arn)" >> $GITHUB_OUTPUT
+      
+      - name: Deploy to ECS (SANDBOX)
+        id: deploy-sandbox
+        if: ${{ inputs.environment == 'sandbox' }}
+        env:
+          BLUE_IMAGE_TAG: ${{ inputs.blue_image_tag }}
+          GREEN_IMAGE_TAG: ${{ inputs.green_image_tag }}
+        run: |
+          set -e
+          cd terraform
+          terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl
+          terraform apply -auto-approve -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="blue_image_tag=$(echo ${{ env.BLUE_IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')" -var="green_image_tag=$(echo ${{ env.GREEN_IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')" -var="active_deployment_colour=${{ inputs.active_deployment_colour }}"
+          echo "CLUSTER_ARN=$(terraform output -raw ecs_cluster_arn)" >> $GITHUB_OUTPUT
+          echo "LISTENER_ARN=$(terraform output -raw listener_arn)" >> $GITHUB_OUTPUT
+          echo "BLUE_SERVICE_ARN=$(terraform output -raw ecs_service_arn_blue)" >> $GITHUB_OUTPUT
+          echo "GREEN_SERVICE_ARN=$(terraform output -raw ecs_service_arn_green)" >> $GITHUB_OUTPUT
+          echo "TARGET_GROUP_ARN=$(terraform output -raw target_group_arn_${{ inputs.active_deployment_colour }})" >> $GITHUB_OUTPUT
 
       - name: Trigger new ECS service deployment
+        if: ${{ inputs.environment != 'sandbox' }}
+        env:
+          CLUSTER_ARN: ${{ steps.deploy.outputs.CLUSTER_ARN }}
+          SERVICE_ARN : ${{ steps.deploy.outputs.SERVICE_ARN }}
         run: |
-          aws ecs update-service --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --service ${{ steps.deploy.outputs.SERVICE_ARN }} --force-new-deployment
+          set -e
+          TASK_DEF_ARN=$(aws ecs describe-services --cluster ${{ env.CLUSTER_ARN }} --services ${{ env.SERVICE_ARN }} --query 'services[0].taskDefinition' --output text)
+
+          echo "Task definition ARN: $TASK_DEF_ARN"
+
+          IMAGE=$(aws ecs describe-task-definition --task-definition "$TASK_DEF_ARN" --query 'taskDefinition.containerDefinitions[0].image' --output text)
+          IMAGE_TAG="${IMAGE##*:}"
+
+          echo "Running ECS service image: $IMAGE"
+
+          if [ "$IMAGE_TAG" != "${{ inputs.IMAGE_TAG }}" ]; then
+            echo "Images tags differ — forcing new deployment."
+            echo "Current Image Tag: $IMAGE_TAG"
+            echo "New Image Tag: $${{ inputs.IMAGE_TAG }}"
+            aws ecs update-service --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --service ${{ steps.deploy.outputs.SERVICE_ARN }} --force-new-deployment
+          else
+            echo "Images match — skipping deployment."
+          fi        
 
       - name: Ensure service stable
+        if: ${{ inputs.environment != 'sandbox' }}
         run: |
           aws ecs wait services-stable --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --services ${{ steps.deploy.outputs.SERVICE_ARN}}
+
+      - name: Trigger new ECS service deployment (SANDBOX) (BLUE)
+        id: ecs-deploy-sandbox-blue
+        if: ${{ inputs.environment == 'sandbox' && steps.deploy-sandbox.outputs.BLUE_SERVICE_ARN != '' }}
+        env:
+          CLUSTER_ARN: ${{ steps.deploy-sandbox.outputs.CLUSTER_ARN }}
+          BLUE_SERVICE_ARN : ${{ steps.deploy-sandbox.outputs.BLUE_SERVICE_ARN }}
+          BLUE_NEW_IMAGE_TAG: ${{ inputs.blue_image_tag }}
+        run: |
+          set -e
+          BLUE_TASK_DEF_ARN=$(aws ecs describe-services --cluster ${{ env.CLUSTER_ARN }} --services ${{ env.BLUE_SERVICE_ARN }} --query 'services[0].taskDefinition' --output text)
+          echo "Task definition ARN: $BLUE_TASK_DEF_ARN"
+
+          # Get the image used by the container definition
+          IMAGE=$(aws ecs describe-task-definition --task-definition "$BLUE_TASK_DEF_ARN" --query 'taskDefinition.containerDefinitions[0].image' --output text)
+          IMAGE_TAG="${IMAGE##*:}"
+
+          echo "Running ECS service image: $IMAGE"
+
+          if [ "$IMAGE_TAG" != "${{ env.BLUE_NEW_IMAGE_TAG }}" ]; then
+            echo "Images differ — forcing new deployment."
+            echo "Current Image TAG: $IMAGE_TAG"
+            echo "New Image TAG: $${{ env.BLUE_NEW_IMAGE_TAG }}"
+            aws ecs update-service --cluster ${{ env.CLUSTER_ARN }} --service ${{ env.BLUE_SERVICE_ARN }} --force-new-deployment
+          else
+            echo "Images match — skipping deployment."
+          fi        
+
+      - name: Trigger new ECS service deployment (SANDBOX) (GREEN)
+        id: ecs-deploy-sandbox-green
+        if: ${{ inputs.environment == 'sandbox' && steps.deploy-sandbox.outputs.GREEN_SERVICE_ARN != '' }}
+        env:
+          CLUSTER_ARN: ${{ steps.deploy-sandbox.outputs.CLUSTER_ARN }}
+          GREEN_SERVICE_ARN : ${{ steps.deploy-sandbox.outputs.GREEN_SERVICE_ARN }}
+          GREEN_NEW_IMAGE_TAG: ${{ inputs.green_image_tag }}
+        run: |
+          set -e
+          GREEN_TASK_DEF_ARN=$(aws ecs describe-services --cluster ${{ env.CLUSTER_ARN }} --services ${{ env.GREEN_SERVICE_ARN }} --query 'services[0].taskDefinition' --output text)
+          echo "Task definition ARN: $GREEN_TASK_DEF_ARN"
+
+          # Get the image used by the container definition
+          IMAGE=$(aws ecs describe-task-definition --task-definition "$GREEN_TASK_DEF_ARN" --query 'taskDefinition.containerDefinitions[0].image' --output text)
+          IMAGE_TAG="${IMAGE##*:}"
+
+          echo "Running ECS service image: $IMAGE"
+
+          if [ "$IMAGE_TAG" != "${{ env.GREEN_NEW_IMAGE_TAG }}" ]; then
+            echo "Images differ — forcing new deployment."
+            echo "Current Image Tag: $IMAGE_TAG"
+            echo "New Image Tag: $${{ env.GREEN_NEW_IMAGE_TAG }}"
+            aws ecs update-service --cluster ${{ env.CLUSTER_ARN }} --service ${{ env.GREEN_SERVICE_ARN }} --force-new-deployment
+          else
+            echo "Images match — skipping deployment."
+          fi 
+
+      - name: Ensure service stable (SANDBOX) (BLUE)
+        if: ${{ inputs.environment == 'sandbox' && steps.ecs-deploy-sandbox-blue.outcome == 'success' }} 
+        run: |
+          aws ecs wait services-stable --cluster ${{ steps.deploy-sandbox.outputs.CLUSTER_ARN }} --services ${{ steps.deploy-sandbox.outputs.BLUE_SERVICE_ARN }}
+
+      - name: Ensure service stable (SANDBOX) (GREEN)
+        if: ${{ inputs.environment == 'sandbox' && steps.ecs-deploy-sandbox-green.outcome == 'success' }} 
+        run: |
+          aws ecs wait services-stable --cluster ${{ steps.deploy-sandbox.outputs.CLUSTER_ARN }} --services ${{ steps.deploy-sandbox.outputs.GREEN_SERVICE_ARN }}
       
+      - name: Update listener forwarding rule
+        if: ${{ inputs.environment == 'sandbox' }}
+        run: |
+          aws elbv2 modify-listener --listener-arn ${{ steps.deploy-sandbox.outputs.LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ steps.deploy-sandbox.outputs.TARGET_GROUP_ARN }}
+
       - name: Alert Slack failure
         if: "${{ failure() && github.ref == 'refs/heads/main' }}"
         run: |
