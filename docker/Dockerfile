@@ -10,8 +10,6 @@ RUN apt-get update \
         gnutls-bin \
         perl \
     && apt-get install -y adduser \
-    && adduser --disabled-password appuser -u 1001 \
-    && chown -R appuser:appuser /jitbit \
     && apt-get dist-upgrade -y \
     && apt-get autoremove -y \
     && apt-get clean \
