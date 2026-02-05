@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
-RUN apt-get update && \
-    apt-get install -y \
+RUN apt-get update \
+    && apt-get install -y \
         wget \
         zlib1g-dev \
         libpam0g \
@@ -9,6 +9,9 @@ RUN apt-get update && \
         libpam-runtime \
         gnutls-bin \
         perl \
+    && apt-get install -y adduser \
+    && adduser --disabled-password appuser -u 1001 \
+    && chown -R appuser:appuser /jitbit \
     && apt-get dist-upgrade -y \
     && apt-get autoremove -y \
     && apt-get clean \
