@@ -103,7 +103,7 @@ jobs:
       
       - name: Terraform Plan (Env with NO Blue/Green deployment solution)
         id: plan
-        if: !contains(fromJson(env.ALLOWED_ENVS), inputs.environment)
+        if: ${{ !contains(fromJson(env.ALLOWED_ENVS), inputs.environment) }}
         working-directory: terraform
         run: |
           set -o pipefail
@@ -157,7 +157,7 @@ jobs:
 
       - name: Deploy to ECS
         id: deploy
-        if: !contains(fromJson(env.ALLOWED_ENVS), inputs.environment)
+        if: ${{ !contains(fromJson(env.ALLOWED_ENVS), inputs.environment) }}
         env:
           IMAGE_TAG: ${{ inputs.image_tag }}
         run: |
@@ -170,7 +170,7 @@ jobs:
       
       - name: Deploy to ECS (Blue/Green)
         id: deploy-blue-green
-        if: contains(fromJson(env.ALLOWED_ENVS), inputs.environment)
+        if: ${{ contains(fromJson(env.ALLOWED_ENVS), inputs.environment) }}
         env:
           BLUE_IMAGE_TAG: ${{ inputs.blue_image_tag }}
           GREEN_IMAGE_TAG: ${{ inputs.green_image_tag }}
@@ -186,7 +186,7 @@ jobs:
           echo "TARGET_GROUP_ARN=$(terraform output -raw target_group_arn_${{ inputs.active_deployment_colour }})" >> $GITHUB_OUTPUT
 
       - name: Trigger new ECS service deployment
-        if: !contains(fromJson(env.ALLOWED_ENVS), inputs.environment)
+        if: ${{ !contains(fromJson(env.ALLOWED_ENVS), inputs.environment) }}
         env:
           CLUSTER_ARN: ${{ steps.deploy.outputs.CLUSTER_ARN }}
           SERVICE_ARN : ${{ steps.deploy.outputs.SERVICE_ARN }}
@@ -211,7 +211,7 @@ jobs:
           fi        
 
       - name: Ensure service stable
-        if: !contains(fromJson(env.ALLOWED_ENVS), inputs.environment)
+        if: ${{ !contains(fromJson(env.ALLOWED_ENVS), inputs.environment) }}
         run: |
           aws ecs wait services-stable --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --services ${{ steps.deploy.outputs.SERVICE_ARN}}
 
@@ -270,17 +270,17 @@ jobs:
           fi 
 
       - name: Ensure service stable (BLUE)
-        if: ${{ !contains(fromJson(env.ALLOWED_ENVS), inputs.environment) && steps.ecs-deploy-blue.outcome == 'success'}}
+        if: ${{ !contains(fromJson(env.ALLOWED_ENVS), inputs.environment) && steps.ecs-deploy-blue.outcome == 'success' }}
         run: |
           aws ecs wait services-stable --cluster ${{ steps.deploy-blue-green.outputs.CLUSTER_ARN }} --services ${{ steps.deploy-blue-green.outputs.BLUE_SERVICE_ARN }}
 
       - name: Ensure service stable (GREEN)
-        if: ${{ !contains(fromJson(env.ALLOWED_ENVS), inputs.environment) && steps.ecs-deploy-green.outcome == 'success'}}
+        if: ${{ !contains(fromJson(env.ALLOWED_ENVS), inputs.environment) && steps.ecs-deploy-green.outcome == 'success' }}
         run: |
           aws ecs wait services-stable --cluster ${{ steps.deploy-blue-green.outputs.CLUSTER_ARN }} --services ${{ steps.deploy-blue-green.outputs.GREEN_SERVICE_ARN }}
       
       - name: Update listener forwarding rule
-        if: contains(fromJson(env.ALLOWED_ENVS), inputs.environment)
+        if: ${{ contains(fromJson(env.ALLOWED_ENVS), inputs.environment) }}
         run: |
           aws elbv2 modify-listener --listener-arn ${{ steps.deploy-blue-green.outputs.LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ steps.deploy-blue-green.outputs.TARGET_GROUP_ARN }}
 
