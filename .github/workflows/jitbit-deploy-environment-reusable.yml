@@ -50,7 +50,7 @@ on:
         default: ""
 
 env:
-  BLUE_GREEN_ENVS: '["sandbox","development"]'
+  BLUE_GREEN_ENVS: '["sandbox","development", "test"]'
 
 jobs:
   validate-input-blue-green:
