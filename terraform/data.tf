@@ -44,11 +44,14 @@ locals {
   green_target_group_name = "${var.target_group_name}-green"
 }
 
+data "aws_lb" "lb" {
+  name = var.lb_name
+}
 
-# data "aws_lb_listener" "lb_listener" {
-#   load_balancer_arn = data.aws_lb.sandbox_lb.arn
-#   port              = 443
-# }
+data "aws_lb_listener" "lb_listener" {
+  load_balancer_arn = data.aws_lb.lb.arn
+  port              = 443
+}
 
 data "aws_lb_target_group" "blue_target_group" {
   count = var.blue_green_active ? 1 : 0
