@@ -51,13 +51,13 @@ on:
 
 env:
   BLUE_GREEN_ENVS: '["sandbox","development"]'
-  
+
 jobs:
   validate-input-blue-green:
-    if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) }}
     runs-on: ubuntu-latest
     steps:
       - name: Check if active_deployment_colour input is "blue" or "green"
+        if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) }}
         env:
           ACTIVE_COLOUR: ${{ github.event.inputs.active_deployment_colour }}
         run: |
