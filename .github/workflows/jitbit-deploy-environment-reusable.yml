@@ -48,9 +48,11 @@ on:
         required: false
         type: string
         default: ""
+env:
+  BLUE_GREEN_ENVS: '["sandbox","development"]'
 jobs:
-  validate-input-sandbox:
-    if: ${{ inputs.environment == 'sandbox' }}
+  validate-input-blue-green:
+    if: contains(fromJson(env.ALLOWED_ENVS), inputs.environment)
     runs-on: ubuntu-latest
     steps:
       - name: Check if active_deployment_colour input is "blue" or "green"
@@ -99,9 +101,9 @@ jobs:
           echo "terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl"
           terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl
       
-      - name: Terraform Plan (Not Sandbox)
+      - name: Terraform Plan (Env with NO Blue/Green deployment solution)
         id: plan
-        if: ${{ inputs.environment != 'sandbox' }}
+        if: !contains(fromJson(env.ALLOWED_ENVS), inputs.environment)
         working-directory: terraform
         run: |
           set -o pipefail
@@ -113,9 +115,9 @@ jobs:
           echo "exitcode=${exitcode}" >> $GITHUB_OUTPUT
           (( exitcode == 1 )) && exit 1 || exit 0
 
-      - name: Terraform Plan (SANDBOX)
-        id: plan-sandbox
-        if: ${{ inputs.environment == 'sandbox' }}
+      - name: Terraform Plan (Env with Blue/Green deployment solution)
+        id: plan-blue-green
+        if: contains(fromJson(env.ALLOWED_ENVS), inputs.environment)
         working-directory: terraform
         run: |
           set -o pipefail
@@ -155,7 +157,7 @@ jobs:
 
       - name: Deploy to ECS
         id: deploy
-        if: ${{ inputs.environment != 'sandbox' }}
+        if: !contains(fromJson(env.ALLOWED_ENVS), inputs.environment)
         env:
           IMAGE_TAG: ${{ inputs.image_tag }}
         run: |
@@ -166,9 +168,9 @@ jobs:
           echo "CLUSTER_ARN=$(terraform output -raw ecs_cluster_arn)" >> $GITHUB_OUTPUT
           echo "SERVICE_ARN=$(terraform output -raw ecs_service_arn)" >> $GITHUB_OUTPUT
       
-      - name: Deploy to ECS (SANDBOX)
-        id: deploy-sandbox
-        if: ${{ inputs.environment == 'sandbox' }}
+      - name: Deploy to ECS (Blue/Green)
+        id: deploy-blue-green
+        if: contains(fromJson(env.ALLOWED_ENVS), inputs.environment)
         env:
           BLUE_IMAGE_TAG: ${{ inputs.blue_image_tag }}
           GREEN_IMAGE_TAG: ${{ inputs.green_image_tag }}
@@ -184,7 +186,7 @@ jobs:
           echo "TARGET_GROUP_ARN=$(terraform output -raw target_group_arn_${{ inputs.active_deployment_colour }})" >> $GITHUB_OUTPUT
 
       - name: Trigger new ECS service deployment
-        if: ${{ inputs.environment != 'sandbox' }}
+        if: !contains(fromJson(env.ALLOWED_ENVS), inputs.environment)
         env:
           CLUSTER_ARN: ${{ steps.deploy.outputs.CLUSTER_ARN }}
           SERVICE_ARN : ${{ steps.deploy.outputs.SERVICE_ARN }}
@@ -209,16 +211,16 @@ jobs:
           fi        
 
       - name: Ensure service stable
-        if: ${{ inputs.environment != 'sandbox' }}
+        if: !contains(fromJson(env.ALLOWED_ENVS), inputs.environment)
         run: |
           aws ecs wait services-stable --cluster ${{ steps.deploy.outputs.CLUSTER_ARN }} --services ${{ steps.deploy.outputs.SERVICE_ARN}}
 
-      - name: Trigger new ECS service deployment (SANDBOX) (BLUE)
-        id: ecs-deploy-sandbox-blue
-        if: ${{ inputs.environment == 'sandbox' && steps.deploy-sandbox.outputs.BLUE_SERVICE_ARN != '' }}
+      - name: Trigger new ECS service deployment (BLUE)
+        id: ecs-deploy-blue
+        if: ${{ !contains(fromJson(env.ALLOWED_ENVS), inputs.environment) && steps.deploy-blue-green.outputs.BLUE_SERVICE_ARN != '' }}
         env:
-          CLUSTER_ARN: ${{ steps.deploy-sandbox.outputs.CLUSTER_ARN }}
-          BLUE_SERVICE_ARN : ${{ steps.deploy-sandbox.outputs.BLUE_SERVICE_ARN }}
+          CLUSTER_ARN: ${{ steps.deploy-blue-green.outputs.CLUSTER_ARN }}
+          BLUE_SERVICE_ARN : ${{ steps.deploy-blue-green.outputs.BLUE_SERVICE_ARN }}
           BLUE_NEW_IMAGE_TAG: ${{ inputs.blue_image_tag }}
         run: |
           set -e
@@ -240,12 +242,12 @@ jobs:
             echo "Images match — skipping deployment."
           fi        
 
-      - name: Trigger new ECS service deployment (SANDBOX) (GREEN)
-        id: ecs-deploy-sandbox-green
-        if: ${{ inputs.environment == 'sandbox' && steps.deploy-sandbox.outputs.GREEN_SERVICE_ARN != '' }}
+      - name: Trigger new ECS service deployment (GREEN)
+        id: ecs-deploy-green
+        if: ${{ !contains(fromJson(env.ALLOWED_ENVS), inputs.environment) && steps.deploy-.outputs.GREEN_SERVICE_ARN != '' }}
         env:
-          CLUSTER_ARN: ${{ steps.deploy-sandbox.outputs.CLUSTER_ARN }}
-          GREEN_SERVICE_ARN : ${{ steps.deploy-sandbox.outputs.GREEN_SERVICE_ARN }}
+          CLUSTER_ARN: ${{ steps.deploy-blue-green.outputs.CLUSTER_ARN }}
+          GREEN_SERVICE_ARN : ${{ steps.deploy-blue-green.outputs.GREEN_SERVICE_ARN }}
           GREEN_NEW_IMAGE_TAG: ${{ inputs.green_image_tag }}
         run: |
           set -e
@@ -267,20 +269,20 @@ jobs:
             echo "Images match — skipping deployment."
           fi 
 
-      - name: Ensure service stable (SANDBOX) (BLUE)
-        if: ${{ inputs.environment == 'sandbox' && steps.ecs-deploy-sandbox-blue.outcome == 'success' }} 
+      - name: Ensure service stable (BLUE)
+        if: ${{ !contains(fromJson(env.ALLOWED_ENVS), inputs.environment) && steps.ecs-deploy-blue.outcome == 'success'}}
         run: |
-          aws ecs wait services-stable --cluster ${{ steps.deploy-sandbox.outputs.CLUSTER_ARN }} --services ${{ steps.deploy-sandbox.outputs.BLUE_SERVICE_ARN }}
+          aws ecs wait services-stable --cluster ${{ steps.deploy-blue-green.outputs.CLUSTER_ARN }} --services ${{ steps.deploy-blue-green.outputs.BLUE_SERVICE_ARN }}
 
-      - name: Ensure service stable (SANDBOX) (GREEN)
-        if: ${{ inputs.environment == 'sandbox' && steps.ecs-deploy-sandbox-green.outcome == 'success' }} 
+      - name: Ensure service stable (GREEN)
+        if: ${{ !contains(fromJson(env.ALLOWED_ENVS), inputs.environment) && steps.ecs-deploy-green.outcome == 'success'}}
         run: |
-          aws ecs wait services-stable --cluster ${{ steps.deploy-sandbox.outputs.CLUSTER_ARN }} --services ${{ steps.deploy-sandbox.outputs.GREEN_SERVICE_ARN }}
+          aws ecs wait services-stable --cluster ${{ steps.deploy-blue-green.outputs.CLUSTER_ARN }} --services ${{ steps.deploy-blue-green.outputs.GREEN_SERVICE_ARN }}
       
       - name: Update listener forwarding rule
-        if: ${{ inputs.environment == 'sandbox' }}
+        if: contains(fromJson(env.ALLOWED_ENVS), inputs.environment)
         run: |
-          aws elbv2 modify-listener --listener-arn ${{ steps.deploy-sandbox.outputs.LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ steps.deploy-sandbox.outputs.TARGET_GROUP_ARN }}
+          aws elbv2 modify-listener --listener-arn ${{ steps.deploy-blue-green.outputs.LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ steps.deploy-blue-green.outputs.TARGET_GROUP_ARN }}
 
       - name: Alert Slack failure
         if: "${{ failure() && github.ref == 'refs/heads/main' }}"
