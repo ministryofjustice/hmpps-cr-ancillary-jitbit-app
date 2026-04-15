@@ -3,6 +3,7 @@ environment                        = "test"
 sub_env                            = "test"
 lb_name                            = "delius-jitbit-lb"
 target_group_name                  = "delius-jitbit"
+blue_green_active                  = true
 service_security_group_id          = "sg-0928b7dc86466b1ba"
 s3_bucket_name                     = "delius-jitbit-test-20230621100034577700000001"
 ecs_task_cpu                       = 2048

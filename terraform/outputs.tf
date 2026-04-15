@@ -3,5 +3,25 @@ output "ecs_cluster_arn" {
 }
 
 output "ecs_service_arn" {
-  value = var.sub_env != "sandbox" ? module.deploy[0].service_arn : ""
+  value = !var.blue_green_active ? module.deploy[0].service_arn : ""
+}
+
+# output "listener_arn" {
+#   value = data.aws_lb_listener.lb_listener.arn
+# }
+
+output "ecs_service_arn_blue" {
+  value = var.blue_green_active && var.blue_image_tag != "" ? module.blue_deploy[0].service_arn : ""
+}
+
+output "ecs_service_arn_green" {
+  value = var.blue_green_active && var.green_image_tag != "" ? module.green_deploy[0].service_arn : ""
+}
+
+output "target_group_arn_blue" {
+  value = var.blue_green_active ? data.aws_lb_target_group.blue_target_group[0].arn : ""
+}
+
+output "target_group_arn_green" {
+  value = var.blue_green_active ? data.aws_lb_target_group.green_target_group[0].arn : ""
 }
