@@ -17,12 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4.0.1
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
         with:
           role-to-assume: "arn:aws:iam::${{ vars.IMG_BUILD_PUSH_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
           role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
@@ -30,7 +30,7 @@ jobs:
 
       - name: Cache app files
         id: app-files
-        uses: actions/cache@v4
+        uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v4.0.0
         with:
           path: docker/app
           key: "${{ inputs.jitbit_version }}"
@@ -44,10 +44,10 @@ jobs:
             --recursive
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
 
       - name: Build image and export
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@c382f710d39a5bb4e430307530a720f50c2d3318 # v6.0.0
         with:
           context: ./docker
           tags: delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}
@@ -57,7 +57,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f #v6.0.0
         with:
           name: jitbit-image-${{ inputs.jitbit_version }}-${{ github.run_id }}
           path: /tmp/jitbit-image-${{ inputs.jitbit_version }}-${{ github.run_id }}.tar
@@ -71,12 +71,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: jitbit-image-${{ inputs.jitbit_version }}-${{ github.run_id }}
           path: /tmp
@@ -96,7 +96,7 @@ jobs:
           curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":x: Trivy :trivy: Scan Found Security Advisories"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"Image tag: delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}"},"accessory":{"type":"button","text":{"type":"plain_text","text":":github:    View Workflow Job","emoji":true},"value":"view_job","url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}","action_id":"button-action"}},{"type":"section","text":{"type":"mrkdwn","text":"Please check the security tab for details :arrow_right: "},"accessory":{"type":"button","text":{"type":"plain_text","text":":github:       View Security Tab","emoji":true},"value":"view_sec_tab","url":"${{ github.server_url }}/${{ github.repository }}/security/code-scanning","action_id":"button-action"}}]}' ${{ secrets.JITBIT_ALERTS_NON_PROD_CHANNEL_WEBHOOK }}
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@ff0a06e83cb2de871e5a09832bc6a81e7276941f # v3.28.18
         if: always()
         with:
           sarif_file: "trivy-results.sarif"
@@ -112,18 +112,18 @@ jobs:
       new_tag: ${{ steps.bump-version.outputs.new_tag }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
       - name: Download Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: jitbit-image-${{ inputs.jitbit_version }}-${{ github.run_id }}
           path: /tmp
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4.0.1
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
         with:
           role-to-assume: "arn:aws:iam::${{ vars.IMG_BUILD_PUSH_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
           role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_id }}-${{ github.run_attempt }}"
