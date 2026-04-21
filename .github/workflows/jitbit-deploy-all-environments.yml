@@ -18,7 +18,7 @@ jobs:
             green_image_tag: ""
             active_deployment_colour: blue
           - environment: development
-            image_tag: 11.14.1-latest
+            image_tag: 11.14.4-latest
           - environment: preproduction
             image_tag: 11.14.1-latest
           - environment: production

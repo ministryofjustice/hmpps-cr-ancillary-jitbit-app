@@ -1,22 +1,20 @@
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
-RUN apt-get update && \
-  apt-get install -y wget && \
-  apt-get dist-upgrade -y && \
-  apt-get autoremove -y && \
-  apt-get clean && \
-  update-ca-certificates
-
-
-COPY ./debian-testing.sources /etc/apt/sources.list.d/debian-testing.sources
-COPY ./default-release /etc/apt/apt.conf.d/default-release
-COPY ./testing.pref /etc/apt/preferences.d/testing.pref
-
-RUN apt update && \
-    apt install -t testing zlib1g-dev -y && \
-    apt install -t testing libpam0g libpam-modules libpam-runtime -y && \
-    apt install -t testing gnutls-bin -y && \
-    apt install -t testing perl-base perl perl-modules-5.40 -y
+RUN apt-get update \
+    && apt-get install -y \
+        wget \
+        zlib1g-dev \
+        libpam0g \
+        libpam-modules \
+        libpam-runtime \
+        gnutls-bin \
+        perl \
+    && apt-get install -y adduser \
+    && apt-get dist-upgrade -y \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && update-ca-certificates
 
 # set timezone
 ENV TZ="Europe/London"
