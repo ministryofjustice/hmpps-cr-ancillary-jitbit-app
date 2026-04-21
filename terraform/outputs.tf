@@ -6,9 +6,9 @@ output "ecs_service_arn" {
   value = !var.blue_green_active ? module.deploy[0].service_arn : ""
 }
 
-# output "listener_arn" {
-#   value = data.aws_lb_listener.lb_listener.arn
-# }
+output "listener_arn" {
+  value = data.aws_lb_listener.lb_listener.arn
+}
 
 output "ecs_service_arn_blue" {
   value = var.blue_green_active && var.blue_image_tag != "" ? module.blue_deploy[0].service_arn : ""
