@@ -12,15 +12,57 @@ variable "environment" {
   }
 }
 
+variable "sub_env" {
+  type        = string
+  description = "Used to distinguish between envs in the same account e.g. dev and sandbox"
+  validation {
+    condition     = contains(["sandbox", "development", "test", "preproduction", "production"], var.sub_env)
+    error_message = "Valid values for sub_env are (sandbox, development, test, preproduction, production)"
+  }
+}
+
 variable "suffix" {
   type        = string
   description = "optional suffix for nonstandard environments"
   default     = ""
 }
 
+variable "lb_name" {
+  type        = string
+  description = "Name of the loadbalancer"
+}
+
 variable "target_group_name" {
   type        = string
   description = "Name of the target group to register the service with"
+}
+
+variable "blue_green_active" {
+  type        = bool
+  description = "Is the blue/green deployment solution infrastructure deployed"
+}
+
+variable "active_deployment_colour" {
+  type        = string
+  description = "Which deployment color is currently active: 'blue', 'green', or undefined."
+  default     = null
+
+  validation {
+    condition     = var.active_deployment_colour == null || can(contains(["blue", "green"], var.active_deployment_colour))
+    error_message = "active_deployment_color must be either 'blue', 'green' or not defined"
+  }
+}
+
+variable "blue_image_tag" {
+  type        = string
+  description = "Tag of the application image to deploy for 'blue' service"
+  default     = ""
+}
+
+variable "green_image_tag" {
+  type        = string
+  description = "Tag of the application image to deploy for 'green' service"
+  default     = ""
 }
 
 variable "image_tag" {

@@ -23,7 +23,8 @@ data "aws_subnet" "private_subnets_c" {
 }
 
 data "aws_lb_target_group" "service" {
-  name = var.target_group_name
+  count = var.blue_green_active ? 0 : 1
+  name  = var.target_group_name
 }
 
 data "aws_secretsmanager_secret" "connection_string" {
@@ -36,4 +37,28 @@ data "aws_secretsmanager_secret" "s3_user_access_key" {
 
 data "aws_secretsmanager_secret" "s3_user_secret_key" {
   name = "${local.app_name}-s3-user-secret-key"
+}
+
+locals {
+  blue_target_group_name  = "${var.target_group_name}-blue"
+  green_target_group_name = "${var.target_group_name}-green"
+}
+
+data "aws_lb" "lb" {
+  name = var.lb_name
+}
+
+data "aws_lb_listener" "lb_listener" {
+  load_balancer_arn = data.aws_lb.lb.arn
+  port              = 443
+}
+
+data "aws_lb_target_group" "blue_target_group" {
+  count = var.blue_green_active ? 1 : 0
+  name  = local.blue_target_group_name
+}
+
+data "aws_lb_target_group" "green_target_group" {
+  count = var.blue_green_active ? 1 : 0
+  name  = local.green_target_group_name
 }
