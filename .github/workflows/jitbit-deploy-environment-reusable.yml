@@ -23,7 +23,7 @@ on:
       active_deployment_colour:
         required: false
         type: string
-        default: ""
+        default: "blue"
   workflow_dispatch:
     inputs:
       environment:

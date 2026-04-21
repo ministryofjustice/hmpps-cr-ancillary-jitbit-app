@@ -14,17 +14,26 @@ jobs:
       matrix:
         include:
           - environment: sandbox
-            blue_image_tag: 11.14.3-latest
-            green_image_tag: ""
+            blue_image_tag: 11.18.4-latest
+            green_image_tag: 11.20.1-latest
             active_deployment_colour: blue
+
           - environment: development
-            image_tag: 11.14.4-latest
+            blue_image_tag: 11.18.4-latest
+            green_image_tag: 11.18.4-latest
+            active_deployment_colour: blue
+
+          - environment: test
+            blue_image_tag: 11.18.4-latest
+            green_image_tag: 11.18.4-latest
+            active_deployment_colour: blue
+
           - environment: preproduction
             image_tag: 11.14.1-latest
+
           - environment: production
             image_tag: 11.14.1-latest
-          - environment: test
-            image_tag: 11.14.1-latest
+            
     with:
       environment: ${{ matrix.environment }}
       image_tag: ${{ matrix.image_tag }}
