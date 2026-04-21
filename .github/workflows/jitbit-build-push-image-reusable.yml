@@ -96,7 +96,7 @@ jobs:
           curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":x: Trivy :trivy: Scan Found Security Advisories"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"Image tag: delius-jitbit-ecr-repo:${{ inputs.jitbit_version }}-${{ github.run_id }}"},"accessory":{"type":"button","text":{"type":"plain_text","text":":github:    View Workflow Job","emoji":true},"value":"view_job","url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}","action_id":"button-action"}},{"type":"section","text":{"type":"mrkdwn","text":"Please check the security tab for details :arrow_right: "},"accessory":{"type":"button","text":{"type":"plain_text","text":":github:       View Security Tab","emoji":true},"value":"view_sec_tab","url":"${{ github.server_url }}/${{ github.repository }}/security/code-scanning","action_id":"button-action"}}]}' ${{ secrets.JITBIT_ALERTS_NON_PROD_CHANNEL_WEBHOOK }}
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@ff0a06e83cb2de871e5a09832bc6a81e7276941f # v3.28.18
+        uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4.32.2
         if: always()
         with:
           sarif_file: "trivy-results.sarif"
