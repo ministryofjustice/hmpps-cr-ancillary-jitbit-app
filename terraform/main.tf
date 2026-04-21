@@ -65,6 +65,16 @@ module "container" {
   ]
 }
 
+moved {
+  from = module.deploy.aws_ecs_service.default[0]
+  to   = module.deploy[0].aws_ecs_service.default[0]
+}
+
+moved {
+  from = module.deploy.aws_ecs_task_definition.default[0]
+  to   = module.deploy[0].aws_ecs_task_definition.default[0]
+}
+
 module "deploy" {
   count = var.blue_green_active ? 0 : 1
 

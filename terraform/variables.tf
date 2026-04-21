@@ -48,7 +48,7 @@ variable "active_deployment_colour" {
   default     = null
 
   validation {
-    condition     = var.active_deployment_colour == null || contains(["blue", "green"], var.active_deployment_colour)
+    condition     = var.active_deployment_colour == null || can(contains(["blue", "green"], var.active_deployment_colour))
     error_message = "active_deployment_color must be either 'blue', 'green' or not defined"
   }
 }
