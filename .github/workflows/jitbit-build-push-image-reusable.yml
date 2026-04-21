@@ -30,7 +30,7 @@ jobs:
 
       - name: Cache app files
         id: app-files
-        uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v4.0.0
+        uses: actions/cache@a7833574556fa59680c1b7cb190c1735db73ebf0 # v5.0.5
         with:
           path: docker/app
           key: "${{ inputs.jitbit_version }}"
