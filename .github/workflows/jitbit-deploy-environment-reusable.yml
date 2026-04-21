@@ -56,18 +56,18 @@ jobs:
   validate-input-blue-green:
     runs-on: ubuntu-latest
     steps:
-      - name: Check if active_deployment_colour input is "blue" or "green"
-        if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) }}
-        env:
-          ACTIVE_COLOUR: ${{ github.event.inputs.active_deployment_colour }}
-        run: |
-          if [[ "$ACTIVE_COLOUR" != "blue" && "$ACTIVE_COLOUR" != "green" ]]; then
-            echo "Invalid value for input 'active_deployment_colour'. Must be either 'blue' or 'green'."
-            echo "Value provided: '$ACTIVE_COLOUR'"
-            exit 1
-          else
-            echo "Input is valid: '$ACTIVE_COLOUR'"
-          fi
+    - name: Check if active_deployment_colour input is "blue" or "green"
+      if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment || github.event.inputs.environment) }}
+      env:
+        ACTIVE_COLOUR: ${{ inputs.active_deployment_colour || github.event.inputs.active_deployment_colour }}
+      run: |
+        if [[ "$ACTIVE_COLOUR" != "blue" && "$ACTIVE_COLOUR" != "green" ]]; then
+          echo "Invalid value for input 'active_deployment_colour'. Must be either 'blue' or 'green'."
+          echo "Value provided: '$ACTIVE_COLOUR'"
+          exit 1
+        else
+          echo "Input is valid: '$ACTIVE_COLOUR'"
+        fi
   plan:
     name: Plan - ${{ inputs.environment }}
     runs-on: ubuntu-latest
