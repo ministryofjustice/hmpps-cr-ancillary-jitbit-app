@@ -27,7 +27,7 @@ module "container" {
     protocol      = "tcp"
   }]
 
-  mount_points             = []
+  mount_points             = local.mount_points
   readonly_root_filesystem = false
 
   log_configuration = {
@@ -113,6 +113,8 @@ module "deploy" {
     data.aws_subnet.private_subnets_c.id
   ]
 
+  efs_volumes = local.efs_volumes
+
   ignore_changes       = false
   force_new_deployment = false
 }
@@ -156,7 +158,7 @@ module "blue_container" {
     protocol      = "tcp"
   }]
 
-  mount_points             = []
+  mount_points             = local.mount_points
   readonly_root_filesystem = false
 
   log_configuration = {
@@ -232,6 +234,8 @@ module "blue_deploy" {
     data.aws_subnet.private_subnets_c.id
   ]
 
+  efs_volumes = local.efs_volumes
+
   ignore_changes       = false
   force_new_deployment = false
 }
@@ -260,7 +264,7 @@ module "green_container" {
     protocol      = "tcp"
   }]
 
-  mount_points             = []
+  mount_points             = local.mount_points
   readonly_root_filesystem = false
 
   log_configuration = {
@@ -335,6 +339,8 @@ module "green_deploy" {
     data.aws_subnet.private_subnets_b.id,
     data.aws_subnet.private_subnets_c.id
   ]
+
+  efs_volumes = local.efs_volumes
 
   ignore_changes       = false
   force_new_deployment = false

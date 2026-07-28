@@ -62,3 +62,15 @@ data "aws_lb_target_group" "green_target_group" {
   count = var.blue_green_active ? 1 : 0
   name  = local.green_target_group_name
 }
+
+data "aws_ssm_parameter" "efs_id" {
+  count = var.create_lucene_efs ? 1 : 0
+
+  name = "/${local.app_name}/${var.sub_env}/efs-id"
+}
+
+data "aws_ssm_parameter" "efs_ap_id" {
+  count = var.create_lucene_efs ? 1 : 0
+
+  name = "/${local.app_name}/${var.sub_env}/efs-access-point-id"
+}
