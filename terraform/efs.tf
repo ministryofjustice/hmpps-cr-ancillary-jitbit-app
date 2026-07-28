@@ -22,7 +22,7 @@ locals {
     }
   ] : []
 
-mount_points = var.create_lucene_efs ? [
+  mount_points = var.create_lucene_efs ? [
     {
       sourceVolume  = "${local.app_name}-${var.sub_env}-efs"
       containerPath = "/mnt/efs/SearchIndex"
