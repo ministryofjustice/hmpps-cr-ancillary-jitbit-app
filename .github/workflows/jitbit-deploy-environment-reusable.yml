@@ -246,7 +246,7 @@ jobs:
 
       - name: Trigger new ECS service deployment (GREEN)
         id: ecs-deploy-green
-        if: ${{ !contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && steps.deploy-.outputs.GREEN_SERVICE_ARN != '' }}
+        if: ${{ !contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && steps.deploy-blue-green.outputs.GREEN_SERVICE_ARN != '' }}
         env:
           CLUSTER_ARN: ${{ steps.deploy-blue-green.outputs.CLUSTER_ARN }}
           GREEN_SERVICE_ARN : ${{ steps.deploy-blue-green.outputs.GREEN_SERVICE_ARN }}

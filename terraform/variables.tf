@@ -109,3 +109,19 @@ variable "deployment_maximum_percent" {
   description = "The upper limit of the number of tasks (as a percentage of `desired_count`) that can be running in a service during a deployment"
   default     = 100
 }
+
+variable "create_lucene_efs" {
+  type        = bool
+  description = "Create an EFS for Lucene"
+  default     = false
+}
+
+variable "mount_points" {
+  description = "The mount points for the container"
+  type = list(object({
+    sourceVolume  = string
+    containerPath = string
+    readOnly      = bool
+  }))
+  default = null
+}
