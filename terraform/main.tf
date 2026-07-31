@@ -78,7 +78,7 @@ moved {
 module "deploy" {
   count = var.blue_green_active ? 0 : 1
 
-  source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//container?ref=b00647922a9204a99b023ac884440162e2b51b66" # v4.3.0
+  source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=b00647922a9204a99b023ac884440162e2b51b66" # v4.3.0
   container_definitions = module.container[0].json_encoded_list
   cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}"
   name                  = local.container_name
@@ -199,7 +199,7 @@ module "blue_container" {
 module "blue_deploy" {
   count = var.blue_green_active && var.active_deployment_colour != "" && var.blue_image_tag != "" ? 1 : 0
 
-  source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//container?ref=b00647922a9204a99b023ac884440162e2b51b66" # v4.3.0
+  source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=b00647922a9204a99b023ac884440162e2b51b66" # v4.3.0
   container_definitions = module.blue_container[0].json_encoded_list
   cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}"
   name                  = "${local.container_name}-blue"
@@ -305,7 +305,7 @@ module "green_container" {
 module "green_deploy" {
   count = var.blue_green_active && var.active_deployment_colour != "" && var.green_image_tag != "" ? 1 : 0
 
-  source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//container?ref=b00647922a9204a99b023ac884440162e2b51b66" # v4.3.0
+  source                = "git::https://github.com/ministryofjustice/modernisation-platform-terraform-ecs-cluster//service?ref=b00647922a9204a99b023ac884440162e2b51b66" # v4.3.0
   container_definitions = module.green_container[0].json_encoded_list
   cluster_arn           = "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/hmpps-${var.environment}-${local.app_name}${var.suffix}"
   name                  = "${local.container_name}-green"
