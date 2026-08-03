@@ -30,7 +30,8 @@ on:
         required: true
         type: choice
         options:
-          - dev
+          - sandbox
+          - development
           - test
       image_tag:
         required: false
