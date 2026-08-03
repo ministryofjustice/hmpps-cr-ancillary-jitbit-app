@@ -61,11 +61,11 @@ jobs:
           aws ecs wait services-stable --services ${CLUSTER_SERVICE_NAME} --cluster ${CLUSTER_SERVICE_NAME}
       
       - name: Restart Jitbit (Blue)
-        if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && (inputs.colours_to_restart == 'blue' || inputs.colours_to_restart == 'both') }}
+        if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && (inputs.colours_to_restart == 'blue' || inputs.colours_to_restart == 'blue & green') }}
         run: |
           aws ecs update-service --force-new-deployment --service ${CLUSTER_SERVICE_NAME} --cluster ${CLUSTER_SERVICE_NAME}
       
       - name: Ensure service stable (Green)
-        if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && (inputs.colours_to_restart == 'green' || inputs.colours_to_restart == 'both') }}
+        if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && (inputs.colours_to_restart == 'green' || inputs.colours_to_restart == 'blue & green') }}
         run: |
           aws ecs wait services-stable --services ${CLUSTER_SERVICE_NAME} --cluster ${CLUSTER_SERVICE_NAME}
