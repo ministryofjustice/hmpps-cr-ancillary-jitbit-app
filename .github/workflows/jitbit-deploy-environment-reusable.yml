@@ -8,10 +8,6 @@ on:
       image_tag:
         required: false
         type: string
-      terraform_version:
-        required: false
-        type: string
-        default: "~1.13"
       blue_image_tag:
         required: false
         type: string
@@ -36,10 +32,6 @@ on:
       image_tag:
         required: false
         type: string
-      terraform_version:
-        required: false
-        type: string
-        default: "~1.13"
       blue_image_tag:
         required: false
         type: string
@@ -101,7 +93,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
-          terraform_version: "${{ inputs.terraform_version }}"
+          terraform_version: "1.10.0"
           terraform_wrapper: false
 
       - name: Terraform Init
@@ -162,7 +154,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
-          terraform_version: "${{ inputs.terraform_version }}"
+          terraform_version: "1.10.0"
           terraform_wrapper: false
 
       - name: Deploy to ECS
