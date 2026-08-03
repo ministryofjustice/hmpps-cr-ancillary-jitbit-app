@@ -28,7 +28,10 @@ on:
     inputs:
       environment:
         required: true
-        type: string
+        type: choice
+        options:
+          - dev
+          - test
       image_tag:
         required: false
         type: string
@@ -46,7 +49,11 @@ on:
         default: ""
       active_deployment_colour:
         required: false
-        type: string
+        type: choice
+        options:
+          - blue
+          - green
+          - ""
         default: ""
 
 env:
