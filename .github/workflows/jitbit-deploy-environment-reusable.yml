@@ -8,10 +8,6 @@ on:
       image_tag:
         required: false
         type: string
-      terraform_version:
-        required: false
-        type: string
-        default: "~1.13"
       blue_image_tag:
         required: false
         type: string
@@ -28,14 +24,16 @@ on:
     inputs:
       environment:
         required: true
-        type: string
+        type: choice
+        options:
+          - sandbox
+          - development
+          - test
+          - preproduciton
+          - production
       image_tag:
         required: false
         type: string
-      terraform_version:
-        required: false
-        type: string
-        default: "~1.13"
       blue_image_tag:
         required: false
         type: string
@@ -46,11 +44,15 @@ on:
         default: ""
       active_deployment_colour:
         required: false
-        type: string
+        type: choice
+        options:
+          - blue
+          - green
+          - ""
         default: ""
 
 env:
-  BLUE_GREEN_ENVS: '["sandbox","development", "test"]'
+  BLUE_GREEN_ENVS: '["sandbox", "development", "test"]'
 
 jobs:
   validate-input-blue-green:
@@ -93,7 +95,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
-          terraform_version: "${{ inputs.terraform_version }}"
+          terraform_version: "1.10.0"
           terraform_wrapper: false
 
       - name: Terraform Init
@@ -154,7 +156,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
-          terraform_version: "${{ inputs.terraform_version }}"
+          terraform_version: "1.10.0"
           terraform_wrapper: false
 
       - name: Deploy to ECS
@@ -219,7 +221,7 @@ jobs:
 
       - name: Trigger new ECS service deployment (BLUE)
         id: ecs-deploy-blue
-        if: ${{ !contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && steps.deploy-blue-green.outputs.BLUE_SERVICE_ARN != '' }}
+        if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && steps.deploy-blue-green.outputs.BLUE_SERVICE_ARN != '' }}
         env:
           CLUSTER_ARN: ${{ steps.deploy-blue-green.outputs.CLUSTER_ARN }}
           BLUE_SERVICE_ARN : ${{ steps.deploy-blue-green.outputs.BLUE_SERVICE_ARN }}
@@ -246,7 +248,7 @@ jobs:
 
       - name: Trigger new ECS service deployment (GREEN)
         id: ecs-deploy-green
-        if: ${{ !contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && steps.deploy-blue-green.outputs.GREEN_SERVICE_ARN != '' }}
+        if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && steps.deploy-blue-green.outputs.GREEN_SERVICE_ARN != '' }}
         env:
           CLUSTER_ARN: ${{ steps.deploy-blue-green.outputs.CLUSTER_ARN }}
           GREEN_SERVICE_ARN : ${{ steps.deploy-blue-green.outputs.GREEN_SERVICE_ARN }}
@@ -272,12 +274,12 @@ jobs:
           fi 
 
       - name: Ensure service stable (BLUE)
-        if: ${{ !contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && steps.ecs-deploy-blue.outcome == 'success' }}
+        if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && steps.ecs-deploy-blue.outcome == 'success' }}
         run: |
           aws ecs wait services-stable --cluster ${{ steps.deploy-blue-green.outputs.CLUSTER_ARN }} --services ${{ steps.deploy-blue-green.outputs.BLUE_SERVICE_ARN }}
 
       - name: Ensure service stable (GREEN)
-        if: ${{ !contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && steps.ecs-deploy-green.outcome == 'success' }}
+        if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && steps.ecs-deploy-green.outcome == 'success' }}
         run: |
           aws ecs wait services-stable --cluster ${{ steps.deploy-blue-green.outputs.CLUSTER_ARN }} --services ${{ steps.deploy-blue-green.outputs.GREEN_SERVICE_ARN }}
       
