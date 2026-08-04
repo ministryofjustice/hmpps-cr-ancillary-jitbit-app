@@ -29,7 +29,7 @@ on:
           - sandbox
           - development
           - test
-          - preproduciton
+          - preproduction
           - production
       image_tag:
         required: false
