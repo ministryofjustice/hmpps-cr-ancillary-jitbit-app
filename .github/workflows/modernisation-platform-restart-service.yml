@@ -25,7 +25,7 @@ on:
           - "not applicable"
 
 env:
-  BLUE_GREEN_ENVS: '["sandbox", "development", "test"]'
+  BLUE_GREEN_ENVS: '["sandbox", "development", "test", "preproduction"]'
 
 jobs:
   restart-jitbit:
