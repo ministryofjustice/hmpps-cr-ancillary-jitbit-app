@@ -29,6 +29,8 @@ on:
           - sandbox
           - development
           - test
+          - preproduciton
+          - production
       image_tag:
         required: false
         type: string
