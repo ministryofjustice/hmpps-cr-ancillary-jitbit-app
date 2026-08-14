@@ -110,12 +110,6 @@ variable "deployment_maximum_percent" {
   default     = 100
 }
 
-variable "create_lucene_efs" {
-  type        = bool
-  description = "Create an EFS for Lucene"
-  default     = false
-}
-
 variable "mount_points" {
   description = "The mount points for the container"
   type = list(object({
