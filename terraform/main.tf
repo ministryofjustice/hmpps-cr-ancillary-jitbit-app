@@ -164,7 +164,7 @@ module "blue_container" {
   log_configuration = {
     logDriver = "awslogs"
     options = {
-      "awslogs-group"         = "${local.app_name}${var.suffix}-ecs"
+      "awslogs-group"         = "${local.app_name}${var.suffix}-blue-ecs"
       "awslogs-region"        = data.aws_region.current.name
       "awslogs-stream-prefix" = "jitbit"
     }
@@ -270,7 +270,7 @@ module "green_container" {
   log_configuration = {
     logDriver = "awslogs"
     options = {
-      "awslogs-group"         = "${local.app_name}${var.suffix}-ecs"
+      "awslogs-group"         = "${local.app_name}${var.suffix}-green-ecs"
       "awslogs-region"        = data.aws_region.current.name
       "awslogs-stream-prefix" = "jitbit"
     }
