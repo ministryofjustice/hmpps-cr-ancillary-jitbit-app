@@ -84,6 +84,7 @@ jobs:
     name: Display Current/Requested Jitbit versions
     runs-on: ubuntu-latest
     needs: validate-input-blue-green
+    environment: ${{ inputs.environment }}
     outputs:
       BLUE_RUNNING_IMAGE_TAG: ${{ steps.current-image-versions.outputs.BLUE_RUNNING_IMAGE_TAG }}
       GREEN_RUNNING_IMAGE_TAG: ${{ steps.current-image-versions.outputs.GREEN_RUNNING_IMAGE_TAG }}
@@ -91,81 +92,81 @@ jobs:
       id-token: write
       contents: read
     steps:
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
-      with:
-        role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
-        role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
-        aws-region: "eu-west-2"
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+          role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
+          aws-region: "eu-west-2"
 
-    - name: Get currently running blue/green image version
-      id: current-image-versions
-      env:
-        ENVIRONMENT: ${{ inputs.environment }}
-      run: |
-        set -e
+      - name: Get currently running blue/green image version
+        id: current-image-versions
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          set -e
 
-        if [ "$ENVIRONMENT" = "sandbox" ]; then
-          CLUSTER_NAME="hmpps-development-delius-jitbit-sandbox"
-        else
-          CLUSTER_NAME="hmpps-${ENVIRONMENT}-delius-jitbit"
-        fi
+          if [ "$ENVIRONMENT" = "sandbox" ]; then
+            CLUSTER_NAME="hmpps-development-delius-jitbit-sandbox"
+          else
+            CLUSTER_NAME="hmpps-${ENVIRONMENT}-delius-jitbit"
+          fi
 
-        echo "Using ECS cluster: $CLUSTER_NAME"
+          echo "Using ECS cluster: $CLUSTER_NAME"
 
-        BLUE_IMAGE_TAG=""
-        GREEN_IMAGE_TAG=""
+          BLUE_IMAGE_TAG=""
+          GREEN_IMAGE_TAG=""
 
-        SERVICES=$(aws ecs list-services \
-          --cluster "$CLUSTER_NAME" \
-          --query 'serviceArns[]' \
-          --output text)
-
-        for SERVICE_ARN in $SERVICES; do
-          SERVICE_NAME=$(aws ecs describe-services \
+          SERVICES=$(aws ecs list-services \
             --cluster "$CLUSTER_NAME" \
-            --services "$SERVICE_ARN" \
-            --query 'services[0].serviceName' \
+            --query 'serviceArns[]' \
             --output text)
 
-          TASK_DEF_ARN=$(aws ecs describe-services \
-            --cluster "$CLUSTER_NAME" \
-            --services "$SERVICE_ARN" \
-            --query 'services[0].taskDefinition' \
-            --output text)
+          for SERVICE_ARN in $SERVICES; do
+            SERVICE_NAME=$(aws ecs describe-services \
+              --cluster "$CLUSTER_NAME" \
+              --services "$SERVICE_ARN" \
+              --query 'services[0].serviceName' \
+              --output text)
 
-          IMAGE=$(aws ecs describe-task-definition \
-            --task-definition "$TASK_DEF_ARN" \
-            --query 'taskDefinition.containerDefinitions[0].image' \
-            --output text)
+            TASK_DEF_ARN=$(aws ecs describe-services \
+              --cluster "$CLUSTER_NAME" \
+              --services "$SERVICE_ARN" \
+              --query 'services[0].taskDefinition' \
+              --output text)
 
-          IMAGE_TAG="${IMAGE##*:}"
+            IMAGE=$(aws ecs describe-task-definition \
+              --task-definition "$TASK_DEF_ARN" \
+              --query 'taskDefinition.containerDefinitions[0].image' \
+              --output text)
 
-          case "$SERVICE_NAME" in
-            *-blue)
-              BLUE_IMAGE_TAG="$IMAGE_TAG"
-              ;;
-            *-green)
-              GREEN_IMAGE_TAG="$IMAGE_TAG"
-              ;;
-          esac
-        done
+            IMAGE_TAG="${IMAGE##*:}"
 
-        echo "BLUE_RUNNING_IMAGE_TAG=$BLUE_IMAGE_TAG" >> "$GITHUB_OUTPUT"
-        echo "GREEN_RUNNING_IMAGE_TAG=$GREEN_IMAGE_TAG" >> "$GITHUB_OUTPUT"
+            case "$SERVICE_NAME" in
+              *-blue)
+                BLUE_IMAGE_TAG="$IMAGE_TAG"
+                ;;
+              *-green)
+                GREEN_IMAGE_TAG="$IMAGE_TAG"
+                ;;
+            esac
+          done
 
-        echo ""
-        echo "========================================"
-        echo "        ECS Deployment Versions"
-        echo "========================================"
-        echo "  BLUE"
-        echo "    Currently running : ${BLUE_IMAGE_TAG:-<not running>}"
-        echo "    Requested         : ${{ inputs.blue_image_tag }}"
-        echo ""
-        echo "  GREEN"
-        echo "    Currently running : ${GREEN_IMAGE_TAG:-<not running>}"
-        echo "    Requested         : ${{ inputs.green_image_tag }}"
-        echo "========================================"
+          echo "BLUE_RUNNING_IMAGE_TAG=$BLUE_IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          echo "GREEN_RUNNING_IMAGE_TAG=$GREEN_IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+          echo ""
+          echo "========================================"
+          echo "        ECS Deployment Versions"
+          echo "========================================"
+          echo "  BLUE"
+          echo "    Currently running : ${BLUE_IMAGE_TAG:-<not running>}"
+          echo "    Requested         : ${{ inputs.blue_image_tag }}"
+          echo ""
+          echo "  GREEN"
+          echo "    Currently running : ${GREEN_IMAGE_TAG:-<not running>}"
+          echo "    Requested         : ${{ inputs.green_image_tag }}"
+          echo "========================================"
 
   plan:
     name: Plan - ${{ inputs.environment }}
