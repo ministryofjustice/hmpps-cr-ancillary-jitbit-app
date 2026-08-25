@@ -114,6 +114,28 @@ jobs:
 
           echo "Using ECS cluster: $CLUSTER_NAME"
 
+          LOAD_BALANCER_ARN=$(aws elbv2 describe-load-balancers \
+            --names "delius-jitbit-lb" \
+            --query 'LoadBalancers[0].LoadBalancerArn' \
+            --output text)
+
+          LISTENER_ARN=$(aws elbv2 describe-listeners \
+            --load-balancer-arn "$LOAD_BALANCER_ARN" \
+            --query 'Listeners[0].ListenerArn' \
+            --output text)
+
+          TARGET_GROUP_ARN=$(aws elbv2 describe-listeners \
+            --listener-arns "$LISTENER_ARN" \
+            --query 'Listeners[0].DefaultActions[0].TargetGroupArn' \
+            --output text)
+
+          TARGET_GROUP_NAME=$(aws elbv2 describe-target-groups \
+            --target-group-arns "$TARGET_GROUP_ARN" \
+            --query 'TargetGroups[0].TargetGroupName' \
+            --output text)
+
+          ACTIVE_COLOUR="${TARGET_GROUP_NAME##*-}"
+
           BLUE_IMAGE_TAG=""
           GREEN_IMAGE_TAG=""
 
@@ -166,6 +188,9 @@ jobs:
           echo "  GREEN"
           echo "    Currently running : ${GREEN_IMAGE_TAG:-<not running>}"
           echo "    Requested         : ${{ inputs.green_image_tag }}"
+          echo "  Deployment Colour"
+          echo "    Currently active  : $ACTIVE_COLOUR"
+          echo "    Requested         : ${{ inputs.active_deployment_colour }}"
           echo "========================================"
 
   plan:

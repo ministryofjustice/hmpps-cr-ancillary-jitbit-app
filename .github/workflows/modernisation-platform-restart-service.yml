@@ -24,7 +24,6 @@ on:
           - "blue & green"
           - ''
 
-
 jobs:
   restart-jitbit:
     name: Restart Jitbit - ${{ inputs.environment }}
