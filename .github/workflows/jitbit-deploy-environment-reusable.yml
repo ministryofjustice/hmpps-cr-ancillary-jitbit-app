@@ -14,9 +14,9 @@ on:
         type: string
         default: ""
       active_deployment_colour:
-        required: false
+        required: true
         type: string
-        default: "blue"
+        default: ""
   workflow_dispatch:
     inputs:
       environment:
@@ -37,7 +37,7 @@ on:
         type: string
         default: ""
       active_deployment_colour:
-        required: false
+        required: true
         type: choice
         options:
           - blue
