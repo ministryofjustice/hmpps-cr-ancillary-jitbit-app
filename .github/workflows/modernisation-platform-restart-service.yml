@@ -24,9 +24,6 @@ on:
           - "blue & green"
           - "not applicable"
 
-env:
-  BLUE_GREEN_ENVS: '["sandbox", "development", "test", "preproduction"]'
-
 jobs:
   restart-jitbit:
     name: Restart Jitbit - ${{ inputs.environment }}
@@ -49,33 +46,23 @@ jobs:
           role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
           role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
           aws-region: "eu-west-2"
-
-      - name: Restart Jitbit (Env with NO Blue/Green deployment solution)
-        if: ${{ !contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) }}
-        run: |
-          aws ecs update-service --force-new-deployment --service ${CLUSTER_SERVICE_NAME} --cluster ${CLUSTER_SERVICE_NAME}
-      
-      - name: Ensure service stable (Env with NO Blue/Green deployment solution)
-        if: ${{ !contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) }}
-        run: |
-          aws ecs wait services-stable --services ${CLUSTER_SERVICE_NAME} --cluster ${CLUSTER_SERVICE_NAME}
       
       - name: Restart Jitbit (Blue)
-        if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && (inputs.colours_to_restart == 'blue' || inputs.colours_to_restart == 'blue & green') }}
+        if: ${{ inputs.colours_to_restart == 'blue' || inputs.colours_to_restart == 'blue & green' }}
         run: |
           aws ecs update-service --force-new-deployment --service "${CLUSTER_SERVICE_NAME}-blue" --cluster ${CLUSTER_SERVICE_NAME}
       
       - name: Ensure service stable (Blue)
-        if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && (inputs.colours_to_restart == 'blue' || inputs.colours_to_restart == 'blue & green') }}
+        if: ${{ inputs.colours_to_restart == 'blue' || inputs.colours_to_restart == 'blue & green' }}
         run: |
           aws ecs wait services-stable --services "${CLUSTER_SERVICE_NAME}-blue" --cluster ${CLUSTER_SERVICE_NAME}
 
       - name: Restart Jitbit (Green)
-        if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && (inputs.colours_to_restart == 'green' || inputs.colours_to_restart == 'blue & green') }}
+        if: ${{ inputs.colours_to_restart == 'green' || inputs.colours_to_restart == 'blue & green' }}
         run: |
           aws ecs update-service --force-new-deployment --service "${CLUSTER_SERVICE_NAME}-green" --cluster ${CLUSTER_SERVICE_NAME}
       
       - name: Ensure service stable (Green)
-        if: ${{ contains(fromJson(env.BLUE_GREEN_ENVS), inputs.environment) && (inputs.colours_to_restart == 'green' || inputs.colours_to_restart == 'blue & green') }}
+        if: ${{ inputs.colours_to_restart == 'green' || inputs.colours_to_restart == 'blue & green' }}
         run: |
           aws ecs wait services-stable --services "${CLUSTER_SERVICE_NAME}-green" --cluster ${CLUSTER_SERVICE_NAME}

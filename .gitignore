@@ -1,5 +1,8 @@
 .env
 .terraform/
+.terraform.lock.hcl
+terraform.tfstate
+.terraform.lock.hcl
 coverage/
 venv/
 env/
@@ -8,7 +11,6 @@ old/
 .vscode
 *.code-workspace
 *.sha256
-terraform.tfstate
 
 
 docker/app
