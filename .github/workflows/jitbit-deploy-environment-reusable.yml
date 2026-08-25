@@ -88,6 +88,13 @@ jobs:
       BLUE_RUNNING_IMAGE_TAG: ${{ steps.current-image-versions.outputs.BLUE_RUNNING_IMAGE_TAG }}
       GREEN_RUNNING_IMAGE_TAG: ${{ steps.current-image-versions.outputs.GREEN_RUNNING_IMAGE_TAG }}
     steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
+      with:
+        role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+        role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
+        aws-region: "eu-west-2"
+
     - name: Get currently running blue/green image version
       id: current-image-versions
       env:
