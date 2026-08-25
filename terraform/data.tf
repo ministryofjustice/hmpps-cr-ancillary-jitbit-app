@@ -22,11 +22,6 @@ data "aws_subnet" "private_subnets_c" {
   }
 }
 
-data "aws_lb_target_group" "service" {
-  count = var.blue_green_active ? 0 : 1
-  name  = var.target_group_name
-}
-
 data "aws_secretsmanager_secret" "connection_string" {
   name = "${local.app_name}-app-connection-string${var.suffix}"
 }
@@ -37,6 +32,10 @@ data "aws_secretsmanager_secret" "s3_user_access_key" {
 
 data "aws_secretsmanager_secret" "s3_user_secret_key" {
   name = "${local.app_name}-s3-user-secret-key"
+}
+
+data "aws_ssm_parameter" "ecs_scaling_state" {
+  name = aws_ssm_parameter.ecs_scaling_state.name
 }
 
 locals {
@@ -54,13 +53,11 @@ data "aws_lb_listener" "lb_listener" {
 }
 
 data "aws_lb_target_group" "blue_target_group" {
-  count = var.blue_green_active ? 1 : 0
-  name  = local.blue_target_group_name
+  name = local.blue_target_group_name
 }
 
 data "aws_lb_target_group" "green_target_group" {
-  count = var.blue_green_active ? 1 : 0
-  name  = local.green_target_group_name
+  name = local.green_target_group_name
 }
 
 data "aws_ssm_parameter" "efs_id" {

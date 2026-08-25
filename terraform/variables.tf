@@ -37,22 +37,6 @@ variable "target_group_name" {
   description = "Name of the target group to register the service with"
 }
 
-variable "blue_green_active" {
-  type        = bool
-  description = "Is the blue/green deployment solution infrastructure deployed"
-}
-
-variable "active_deployment_colour" {
-  type        = string
-  description = "Which deployment color is currently active: 'blue', 'green', or undefined."
-  default     = null
-
-  validation {
-    condition     = var.active_deployment_colour == null || can(contains(["blue", "green"], var.active_deployment_colour))
-    error_message = "active_deployment_color must be either 'blue', 'green' or not defined"
-  }
-}
-
 variable "blue_image_tag" {
   type        = string
   description = "Tag of the application image to deploy for 'blue' service"
@@ -63,12 +47,6 @@ variable "green_image_tag" {
   type        = string
   description = "Tag of the application image to deploy for 'green' service"
   default     = ""
-}
-
-variable "image_tag" {
-  type        = string
-  default     = "latest"
-  description = "Tag of the application image to deploy - use suffix of latest or a specific id"
 }
 
 variable "s3_bucket_name" {
