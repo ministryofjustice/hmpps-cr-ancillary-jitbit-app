@@ -16,13 +16,14 @@ on:
       colours_to_restart:
         description: 'Which colour(s) to restart in a Blue/Green deployment environment.'
         required: false
-        default: 'not applicable'
+        default: ''
         type: choice
         options:
           - blue
           - green
           - "blue & green"
-          - "not applicable"
+          - ''
+
 
 jobs:
   restart-jitbit:
