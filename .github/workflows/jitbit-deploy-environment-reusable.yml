@@ -218,53 +218,6 @@ jobs:
           echo "GREEN_SERVICE_ARN=$(terraform output -raw ecs_service_arn_green)" >> $GITHUB_OUTPUT
           echo "TARGET_GROUP_ARN=$(terraform output -raw target_group_arn_${{ inputs.active_deployment_colour }})" >> $GITHUB_OUTPUT
 
-      - name: Trigger new ECS service deployment (BLUE)
-        id: ecs-deploy-blue
-        if: ${{ steps.tf-apply.outputs.BLUE_SERVICE_ARN != '' }}
-        env:
-          CLUSTER_ARN: ${{ steps.tf-apply.outputs.CLUSTER_ARN }}
-          BLUE_SERVICE_ARN : ${{ steps.tf-apply.outputs.BLUE_SERVICE_ARN }}
-          BLUE_NEW_IMAGE_TAG: ${{ inputs.blue_image_tag }}
-          BLUE_RUNNING_IMAGE_TAG: ${{ needs.plan.outputs.BLUE_RUNNING_IMAGE_TAG }}
-        run: |
-          set -e
-
-          if [ "$IMAGE_TAG" != "${{ env.BLUE_NEW_IMAGE_TAG }}" ]; then
-            echo "Images differ — forcing new deployment."
-            echo "Current Image TAG: $IMAGE_TAG"
-            echo "New Image TAG: ${{ env.BLUE_NEW_IMAGE_TAG }}"
-            aws ecs update-service --cluster ${{ env.CLUSTER_ARN }} --service ${{ env.BLUE_SERVICE_ARN }} --force-new-deployment
-          else
-            echo "Images match — skipping deployment."
-          fi        
-
-      - name: Trigger new ECS service deployment (GREEN)
-        id: ecs-deploy-green
-        if: ${{ steps.tf-apply.outputs.GREEN_SERVICE_ARN != '' }}
-        env:
-          CLUSTER_ARN: ${{ steps.tf-apply.outputs.CLUSTER_ARN }}
-          GREEN_SERVICE_ARN : ${{ steps.tf-apply.outputs.GREEN_SERVICE_ARN }}
-          GREEN_NEW_IMAGE_TAG: ${{ inputs.green_image_tag }}
-        run: |
-          set -e
-          GREEN_TASK_DEF_ARN=$(aws ecs describe-services --cluster ${{ env.CLUSTER_ARN }} --services ${{ env.GREEN_SERVICE_ARN }} --query 'services[0].taskDefinition' --output text)
-          echo "Task definition ARN: $GREEN_TASK_DEF_ARN"
-
-          # Get the image used by the container definition
-          IMAGE=$(aws ecs describe-task-definition --task-definition "$GREEN_TASK_DEF_ARN" --query 'taskDefinition.containerDefinitions[0].image' --output text)
-          IMAGE_TAG="${IMAGE##*:}"
-
-          echo "Running ECS service image: $IMAGE"
-
-          if [ "$IMAGE_TAG" != "${{ env.GREEN_NEW_IMAGE_TAG }}" ]; then
-            echo "Images differ — forcing new deployment."
-            echo "Current Image Tag: $IMAGE_TAG"
-            echo "New Image Tag: $${{ env.GREEN_NEW_IMAGE_TAG }}"
-            aws ecs update-service --cluster ${{ env.CLUSTER_ARN }} --service ${{ env.GREEN_SERVICE_ARN }} --force-new-deployment
-          else
-            echo "Images match — skipping deployment."
-          fi 
-
       - name: Ensure service stable (BLUE)
         if: ${{ needs.plan.outputs.BLUE_RUNNING_IMAGE_TAG != inputs.blue_image_tag && steps.tf-apply.outputs.BLUE_SERVICE_ARN != '' }}
         run: |
