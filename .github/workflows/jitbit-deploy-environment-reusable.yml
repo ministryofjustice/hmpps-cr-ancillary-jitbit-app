@@ -188,6 +188,7 @@ jobs:
           echo "  GREEN"
           echo "    Currently running : ${GREEN_IMAGE_TAG:-<not running>}"
           echo "    Requested         : ${{ inputs.green_image_tag }}"
+          echo ""
           echo "  Deployment Colour"
           echo "    Currently active  : $ACTIVE_COLOUR"
           echo "    Requested         : ${{ inputs.active_deployment_colour }}"

@@ -25,9 +25,120 @@ on:
           - ''
 
 jobs:
+  display-versions:
+    name: Display Current/Requested Jitbit versions
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}-plan
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      BLUE_RUNNING_IMAGE_TAG: ${{ steps.current-image-versions.outputs.BLUE_RUNNING_IMAGE_TAG }}
+      GREEN_RUNNING_IMAGE_TAG: ${{ steps.current-image-versions.outputs.GREEN_RUNNING_IMAGE_TAG }}
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+          role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
+          aws-region: "eu-west-2"
+
+      - name: Get currently running blue/green image version
+        id: current-image-versions
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          set -e
+
+          if [ "$ENVIRONMENT" = "sandbox" ]; then
+            CLUSTER_NAME="hmpps-development-delius-jitbit-sandbox"
+          else
+            CLUSTER_NAME="hmpps-${ENVIRONMENT}-delius-jitbit"
+          fi
+
+          echo "Using ECS cluster: $CLUSTER_NAME"
+
+          LOAD_BALANCER_ARN=$(aws elbv2 describe-load-balancers \
+            --names "delius-jitbit-lb" \
+            --query 'LoadBalancers[0].LoadBalancerArn' \
+            --output text)
+
+          LISTENER_ARN=$(aws elbv2 describe-listeners \
+            --load-balancer-arn "$LOAD_BALANCER_ARN" \
+            --query 'Listeners[0].ListenerArn' \
+            --output text)
+
+          TARGET_GROUP_ARN=$(aws elbv2 describe-listeners \
+            --listener-arns "$LISTENER_ARN" \
+            --query 'Listeners[0].DefaultActions[0].TargetGroupArn' \
+            --output text)
+
+          TARGET_GROUP_NAME=$(aws elbv2 describe-target-groups \
+            --target-group-arns "$TARGET_GROUP_ARN" \
+            --query 'TargetGroups[0].TargetGroupName' \
+            --output text)
+
+          ACTIVE_COLOUR="${TARGET_GROUP_NAME##*-}"
+
+          BLUE_IMAGE_TAG=""
+          GREEN_IMAGE_TAG=""
+
+          SERVICES=$(aws ecs list-services \
+            --cluster "$CLUSTER_NAME" \
+            --query 'serviceArns[]' \
+            --output text)
+
+          for SERVICE_ARN in $SERVICES; do
+            SERVICE_NAME=$(aws ecs describe-services \
+              --cluster "$CLUSTER_NAME" \
+              --services "$SERVICE_ARN" \
+              --query 'services[0].serviceName' \
+              --output text)
+
+            TASK_DEF_ARN=$(aws ecs describe-services \
+              --cluster "$CLUSTER_NAME" \
+              --services "$SERVICE_ARN" \
+              --query 'services[0].taskDefinition' \
+              --output text)
+
+            IMAGE=$(aws ecs describe-task-definition \
+              --task-definition "$TASK_DEF_ARN" \
+              --query 'taskDefinition.containerDefinitions[0].image' \
+              --output text)
+
+            IMAGE_TAG="${IMAGE##*:}"
+
+            case "$SERVICE_NAME" in
+              *-blue)
+                BLUE_IMAGE_TAG="$IMAGE_TAG"
+                ;;
+              *-green)
+                GREEN_IMAGE_TAG="$IMAGE_TAG"
+                ;;
+            esac
+          done
+
+          echo "BLUE_RUNNING_IMAGE_TAG=$BLUE_IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          echo "GREEN_RUNNING_IMAGE_TAG=$GREEN_IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+          echo ""
+          echo "========================================"
+          echo "        ECS Deployment Versions"
+          echo "========================================"
+          echo "  BLUE"
+          echo "    Currently running : ${BLUE_IMAGE_TAG:-<not running>}"
+          echo ""
+          echo "  GREEN"
+          echo "    Currently running : ${GREEN_IMAGE_TAG:-<not running>}"
+          echo ""
+          echo "  Deployment Colour"
+          echo "    Currently active  : $ACTIVE_COLOUR"
+          echo "========================================"
+
   restart-jitbit:
     name: Restart Jitbit - ${{ inputs.environment }}
     runs-on: ubuntu-latest
+    needs: display-versions
     environment: ${{ inputs.environment }}
     permissions:
       id-token: write
@@ -48,21 +159,21 @@ jobs:
           aws-region: "eu-west-2"
       
       - name: Restart Jitbit (Blue)
-        if: ${{ inputs.colours_to_restart == 'blue' || inputs.colours_to_restart == 'blue & green' }}
+        if: ${{ needs.display-versions.outputs.BLUE_RUNNING_IMAGE_TAG != '' && (inputs.colours_to_restart == 'blue' || inputs.colours_to_restart == 'blue & green') }}
         run: |
           aws ecs update-service --force-new-deployment --service "${CLUSTER_SERVICE_NAME}-blue" --cluster ${CLUSTER_SERVICE_NAME}
-      
+    
       - name: Ensure service stable (Blue)
-        if: ${{ inputs.colours_to_restart == 'blue' || inputs.colours_to_restart == 'blue & green' }}
+        if: ${{ needs.display-versions.outputs.BLUE_RUNNING_IMAGE_TAG != '' && (inputs.colours_to_restart == 'blue' || inputs.colours_to_restart == 'blue & green') }}
         run: |
           aws ecs wait services-stable --services "${CLUSTER_SERVICE_NAME}-blue" --cluster ${CLUSTER_SERVICE_NAME}
 
       - name: Restart Jitbit (Green)
-        if: ${{ inputs.colours_to_restart == 'green' || inputs.colours_to_restart == 'blue & green' }}
+        if: ${{ needs.display-versions.outputs.GREEN_RUNNING_IMAGE_TAG != '' && (inputs.colours_to_restart == 'green' || inputs.colours_to_restart == 'blue & green') }}
         run: |
           aws ecs update-service --force-new-deployment --service "${CLUSTER_SERVICE_NAME}-green" --cluster ${CLUSTER_SERVICE_NAME}
       
       - name: Ensure service stable (Green)
-        if: ${{ inputs.colours_to_restart == 'green' || inputs.colours_to_restart == 'blue & green' }}
+        if: ${{ needs.display-versions.outputs.GREEN_RUNNING_IMAGE_TAG != '' && (inputs.colours_to_restart == 'green' || inputs.colours_to_restart == 'blue & green') }}
         run: |
           aws ecs wait services-stable --services "${CLUSTER_SERVICE_NAME}-green" --cluster ${CLUSTER_SERVICE_NAME}
