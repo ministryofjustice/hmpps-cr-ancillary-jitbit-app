@@ -149,11 +149,18 @@ jobs:
           echo "BLUE_RUNNING_IMAGE_TAG=$BLUE_IMAGE_TAG" >> "$GITHUB_OUTPUT"
           echo "GREEN_RUNNING_IMAGE_TAG=$GREEN_IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
-          echo "BLUE image (Currently Running): ${BLUE_IMAGE_TAG:-<not running>}"
-          echo "BLUE image (User Input): ${{ inputs.blue_image_tag }}"
-
-          echo "GREEN image (Currently Running): ${GREEN_IMAGE_TAG:-<not running>}"
-          echo "GREEN image (User Input): ${{ inputs.green_image_tag }}"
+          echo ""
+          echo "========================================"
+          echo "        ECS Deployment Versions"
+          echo "========================================"
+          echo "  BLUE"
+          echo "    Currently running : ${BLUE_IMAGE_TAG:-<not running>}"
+          echo "    Requested         : ${{ inputs.blue_image_tag }}"
+          echo ""
+          echo "  GREEN"
+          echo "    Currently running : ${GREEN_IMAGE_TAG:-<not running>}"
+          echo "    Requested         : ${{ inputs.green_image_tag }}"
+          echo "========================================"
 
       - name: Terraform Init
         working-directory: terraform
