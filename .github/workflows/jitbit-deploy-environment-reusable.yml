@@ -108,14 +108,16 @@ jobs:
 
           if [ "$ENVIRONMENT" = "sandbox" ]; then
             CLUSTER_NAME="hmpps-development-delius-jitbit-sandbox"
+            LOAD_BALANCER_NAME="delius-jitbit-lb-sandbox"
           else
             CLUSTER_NAME="hmpps-${ENVIRONMENT}-delius-jitbit"
+            LOAD_BALANCER_NAME="delius-jitbit-lb"
           fi
 
           echo "Using ECS cluster: $CLUSTER_NAME"
 
           LOAD_BALANCER_ARN=$(aws elbv2 describe-load-balancers \
-            --names "delius-jitbit-lb" \
+            --names "$LOAD_BALANCER_NAME" \
             --query 'LoadBalancers[0].LoadBalancerArn' \
             --output text)
 
