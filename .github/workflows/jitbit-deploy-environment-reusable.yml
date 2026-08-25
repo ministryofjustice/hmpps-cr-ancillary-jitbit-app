@@ -47,27 +47,120 @@ on:
 
 jobs:
   validate-input-blue-green:
+    name: Validate Inputs
     runs-on: ubuntu-latest
     steps:
     - name: Check if active_deployment_colour input is "blue" or "green"
       env:
         ACTIVE_COLOUR: ${{ inputs.active_deployment_colour || github.event.inputs.active_deployment_colour }}
+        BLUE_IMAGE_TAG: ${{ inputs.blue_image_tag || github.event.inputs.blue_image_tag }}
+        GREEN_IMAGE_TAG: ${{ inputs.green_image_tag || github.event.inputs.green_image_tag }}
       run: |
         if [[ "$ACTIVE_COLOUR" != "blue" && "$ACTIVE_COLOUR" != "green" ]]; then
           echo "Invalid value for input 'active_deployment_colour'. Must be either 'blue' or 'green'."
           echo "Value provided: '$ACTIVE_COLOUR'"
           exit 1
-        else
-          echo "Input is valid: '$ACTIVE_COLOUR'"
         fi
+
+        if [[ "$ACTIVE_COLOUR" == "blue" && -z "$BLUE_IMAGE_TAG" ]]; then
+          echo "Cannot deploy BLUE because no blue_image_tag was provided."
+          exit 1
+        fi
+
+        if [[ "$ACTIVE_COLOUR" == "green" && -z "$GREEN_IMAGE_TAG" ]]; then
+          echo "Cannot deploy GREEN because no green_image_tag was provided."
+          exit 1
+        fi
+
+        echo "Deployment colour is valid: '$ACTIVE_COLOUR'"
+
+        if [[ "$ACTIVE_COLOUR" == "blue" ]]; then
+          echo "BLUE image tag: '$BLUE_IMAGE_TAG'"
+        else
+          echo "GREEN image tag: '$GREEN_IMAGE_TAG'"
+        fi
+  
+  display-versions:
+    name: Display Current/Requested Jitbit versions
+    runs-on: ubuntu-latest
+    outputs:
+      BLUE_RUNNING_IMAGE_TAG: ${{ steps.current-image-versions.outputs.BLUE_RUNNING_IMAGE_TAG }}
+      GREEN_RUNNING_IMAGE_TAG: ${{ steps.current-image-versions.outputs.GREEN_RUNNING_IMAGE_TAG }}
+    steps:
+    - name: Get currently running blue/green image version
+      id: current-image-versions
+      env:
+        ENVIRONMENT: ${{ inputs.environment }}
+      run: |
+        set -e
+
+        if [ "$ENVIRONMENT" = "sandbox" ]; then
+          CLUSTER_NAME="hmpps-development-delius-jitbit-sandbox"
+        else
+          CLUSTER_NAME="hmpps-${ENVIRONMENT}-delius-jitbit"
+        fi
+
+        echo "Using ECS cluster: $CLUSTER_NAME"
+
+        BLUE_IMAGE_TAG=""
+        GREEN_IMAGE_TAG=""
+
+        SERVICES=$(aws ecs list-services \
+          --cluster "$CLUSTER_NAME" \
+          --query 'serviceArns[]' \
+          --output text)
+
+        for SERVICE_ARN in $SERVICES; do
+          SERVICE_NAME=$(aws ecs describe-services \
+            --cluster "$CLUSTER_NAME" \
+            --services "$SERVICE_ARN" \
+            --query 'services[0].serviceName' \
+            --output text)
+
+          TASK_DEF_ARN=$(aws ecs describe-services \
+            --cluster "$CLUSTER_NAME" \
+            --services "$SERVICE_ARN" \
+            --query 'services[0].taskDefinition' \
+            --output text)
+
+          IMAGE=$(aws ecs describe-task-definition \
+            --task-definition "$TASK_DEF_ARN" \
+            --query 'taskDefinition.containerDefinitions[0].image' \
+            --output text)
+
+          IMAGE_TAG="${IMAGE##*:}"
+
+          case "$SERVICE_NAME" in
+            *-blue)
+              BLUE_IMAGE_TAG="$IMAGE_TAG"
+              ;;
+            *-green)
+              GREEN_IMAGE_TAG="$IMAGE_TAG"
+              ;;
+          esac
+        done
+
+        echo "BLUE_RUNNING_IMAGE_TAG=$BLUE_IMAGE_TAG" >> "$GITHUB_OUTPUT"
+        echo "GREEN_RUNNING_IMAGE_TAG=$GREEN_IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+        echo ""
+        echo "========================================"
+        echo "        ECS Deployment Versions"
+        echo "========================================"
+        echo "  BLUE"
+        echo "    Currently running : ${BLUE_IMAGE_TAG:-<not running>}"
+        echo "    Requested         : ${{ inputs.blue_image_tag }}"
+        echo ""
+        echo "  GREEN"
+        echo "    Currently running : ${GREEN_IMAGE_TAG:-<not running>}"
+        echo "    Requested         : ${{ inputs.green_image_tag }}"
+        echo "========================================"
+
   plan:
     name: Plan - ${{ inputs.environment }}
     runs-on: ubuntu-latest
     outputs:
       plan_exitcode: "${{ steps.plan.outputs.exitcode }}"
-      BLUE_RUNNING_IMAGE_TAG: ${{ steps.current-image-versions.outputs.BLUE_RUNNING_IMAGE_TAG }}
-      GREEN_RUNNING_IMAGE_TAG: ${{ steps.current-image-versions.outputs.GREEN_RUNNING_IMAGE_TAG }}
-
     environment: ${{ inputs.environment }}-plan
     strategy:
       fail-fast: false
@@ -90,77 +183,6 @@ jobs:
         with:
           terraform_version: "1.10.0"
           terraform_wrapper: false
-
-      - name: Get currently running blue/green image version
-        id: current-image-versions
-        env:
-          ENVIRONMENT: ${{ inputs.environment }}
-        run: |
-          set -e
-
-          if [ "$ENVIRONMENT" = "sandbox" ]; then
-            CLUSTER_NAME="hmpps-development-delius-jitbit-sandbox"
-          else
-            CLUSTER_NAME="hmpps-${ENVIRONMENT}-delius-jitbit"
-          fi
-
-          echo "Using ECS cluster: $CLUSTER_NAME"
-
-          BLUE_IMAGE_TAG=""
-          GREEN_IMAGE_TAG=""
-
-          SERVICES=$(aws ecs list-services \
-            --cluster "$CLUSTER_NAME" \
-            --query 'serviceArns[]' \
-            --output text)
-
-          for SERVICE_ARN in $SERVICES; do
-            SERVICE_NAME=$(aws ecs describe-services \
-              --cluster "$CLUSTER_NAME" \
-              --services "$SERVICE_ARN" \
-              --query 'services[0].serviceName' \
-              --output text)
-
-            TASK_DEF_ARN=$(aws ecs describe-services \
-              --cluster "$CLUSTER_NAME" \
-              --services "$SERVICE_ARN" \
-              --query 'services[0].taskDefinition' \
-              --output text)
-
-            IMAGE=$(aws ecs describe-task-definition \
-              --task-definition "$TASK_DEF_ARN" \
-              --query 'taskDefinition.containerDefinitions[0].image' \
-              --output text)
-
-            IMAGE_TAG="${IMAGE##*:}"
-
-            echo "$SERVICE_NAME: $IMAGE"
-
-            case "$SERVICE_NAME" in
-              *-blue)
-                BLUE_IMAGE_TAG="$IMAGE_TAG"
-                ;;
-              *-green)
-                GREEN_IMAGE_TAG="$IMAGE_TAG"
-                ;;
-            esac
-          done
-
-          echo "BLUE_RUNNING_IMAGE_TAG=$BLUE_IMAGE_TAG" >> "$GITHUB_OUTPUT"
-          echo "GREEN_RUNNING_IMAGE_TAG=$GREEN_IMAGE_TAG" >> "$GITHUB_OUTPUT"
-
-          echo ""
-          echo "========================================"
-          echo "        ECS Deployment Versions"
-          echo "========================================"
-          echo "  BLUE"
-          echo "    Currently running : ${BLUE_IMAGE_TAG:-<not running>}"
-          echo "    Requested         : ${{ inputs.blue_image_tag }}"
-          echo ""
-          echo "  GREEN"
-          echo "    Currently running : ${GREEN_IMAGE_TAG:-<not running>}"
-          echo "    Requested         : ${{ inputs.green_image_tag }}"
-          echo "========================================"
 
       - name: Terraform Init
         working-directory: terraform
@@ -185,7 +207,7 @@ jobs:
   deploy:
     name: Deploy - ${{ inputs.environment }}
     runs-on: ubuntu-latest
-    needs: plan
+    needs: display-versions
     permissions:
       id-token: write
       contents: read
@@ -226,12 +248,12 @@ jobs:
           echo "TARGET_GROUP_ARN=$(terraform output -raw target_group_arn_${{ inputs.active_deployment_colour }})" >> $GITHUB_OUTPUT
 
       - name: Ensure service stable (BLUE)
-        if: ${{ needs.plan.outputs.BLUE_RUNNING_IMAGE_TAG != inputs.blue_image_tag && steps.tf-apply.outputs.BLUE_SERVICE_ARN != '' }}
+        if: ${{ needs.display-versions.outputs.BLUE_RUNNING_IMAGE_TAG != inputs.blue_image_tag && steps.tf-apply.outputs.BLUE_SERVICE_ARN != '' }}
         run: |
           aws ecs wait services-stable --cluster ${{ steps.tf-apply.outputs.CLUSTER_ARN }} --services ${{ steps.tf-apply.outputs.BLUE_SERVICE_ARN }}
 
       - name: Ensure service stable (GREEN)
-        if: ${{ needs.plan.outputs.GREEN_RUNNING_IMAGE_TAG != inputs.blue_image_tag && steps.tf-apply.outputs.GREEN_SERVICE_ARN != '' }}
+        if: ${{ needs.display-versions.outputs.GREEN_RUNNING_IMAGE_TAG != inputs.blue_image_tag && steps.tf-apply.outputs.GREEN_SERVICE_ARN != '' }}
         run: |
           aws ecs wait services-stable --cluster ${{ steps.tf-apply.outputs.CLUSTER_ARN }} --services ${{ steps.tf-apply.outputs.GREEN_SERVICE_ARN }}
       
