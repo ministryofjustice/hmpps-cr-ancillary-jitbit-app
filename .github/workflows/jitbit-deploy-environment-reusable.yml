@@ -87,6 +87,9 @@ jobs:
     outputs:
       BLUE_RUNNING_IMAGE_TAG: ${{ steps.current-image-versions.outputs.BLUE_RUNNING_IMAGE_TAG }}
       GREEN_RUNNING_IMAGE_TAG: ${{ steps.current-image-versions.outputs.GREEN_RUNNING_IMAGE_TAG }}
+    permissions:
+      id-token: write
+      contents: read
     steps:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
