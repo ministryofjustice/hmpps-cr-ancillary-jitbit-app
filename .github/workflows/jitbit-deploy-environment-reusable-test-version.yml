@@ -129,9 +129,8 @@ jobs:
 
           LISTENER_ARN=$(aws elbv2 describe-listeners --load-balancer-arn "$LOAD_BALANCER_ARN" --query 'Listeners[0].ListenerArn' --output text)
 
-          BLUE_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --load-balancer-arn "$LOAD_BALANCER_ARN" --names "$BLUE_TARGET_GROUP_NAME" --query 'TargetGroups[0].TargetGroupArn'  --output text)
-
-          GREEN_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --load-balancer-arn "$LOAD_BALANCER_ARN" --names "$GREEN_TARGET_GROUP_NAME" --query 'TargetGroups[0].TargetGroupArn' --output text)
+          BLUE_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --names "$BLUE_TARGET_GROUP_NAME" --query 'TargetGroups[0].TargetGroupArn'  --output text)
+          GREEN_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --names "$GREEN_TARGET_GROUP_NAME" --query 'TargetGroups[0].TargetGroupArn' --output text)
 
           # Active Target Group
           ACTIVE_TARGET_GROUP_ARN=$(aws elbv2 describe-listeners --listener-arns "$LISTENER_ARN" --query 'Listeners[0].DefaultActions[0].TargetGroupArn' --output text)
