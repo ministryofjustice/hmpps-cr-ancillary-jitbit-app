@@ -13,7 +13,7 @@ on:
         required: false
         type: string
         default: ""
-      active_deployment_colour:
+      deployment_colour:
         required: true
         type: string
         default: ""
@@ -36,7 +36,7 @@ on:
         required: false
         type: string
         default: ""
-      active_deployment_colour:
+      deployment_colour:
         required: true
         type: choice
         options:
@@ -50,31 +50,31 @@ jobs:
     name: Validate Inputs
     runs-on: ubuntu-latest
     steps:
-    - name: Check if active_deployment_colour input is "blue" or "green"
+    - name: Check if deployment_colour input is "blue" or "green"
       env:
-        ACTIVE_COLOUR: ${{ inputs.active_deployment_colour || github.event.inputs.active_deployment_colour }}
+        REQUESTED_COLOUR: ${{ inputs.deployment_colour || github.event.inputs.deployment_colour }}
         BLUE_IMAGE_TAG: ${{ inputs.blue_image_tag || github.event.inputs.blue_image_tag }}
         GREEN_IMAGE_TAG: ${{ inputs.green_image_tag || github.event.inputs.green_image_tag }}
       run: |
-        if [[ "$ACTIVE_COLOUR" != "blue" && "$ACTIVE_COLOUR" != "green" ]]; then
-          echo "Invalid value for input 'active_deployment_colour'. Must be either 'blue' or 'green'."
-          echo "Value provided: '$ACTIVE_COLOUR'"
+        if [[ "$REQUESTED_COLOUR" != "blue" && "$REQUESTED_COLOUR" != "green" ]]; then
+          echo "Invalid value for input 'deployment_colour'. Must be either 'blue' or 'green'."
+          echo "Value provided: '$REQUESTED_COLOUR'"
           exit 1
         fi
 
-        if [[ "$ACTIVE_COLOUR" == "blue" && -z "$BLUE_IMAGE_TAG" ]]; then
+        if [[ "$REQUESTED_COLOUR" == "blue" && -z "$BLUE_IMAGE_TAG" ]]; then
           echo "Cannot deploy BLUE because no blue_image_tag was provided."
           exit 1
         fi
 
-        if [[ "$ACTIVE_COLOUR" == "green" && -z "$GREEN_IMAGE_TAG" ]]; then
+        if [[ "$REQUESTED_COLOUR" == "green" && -z "$GREEN_IMAGE_TAG" ]]; then
           echo "Cannot deploy GREEN because no green_image_tag was provided."
           exit 1
         fi
 
-        echo "Deployment colour is valid: '$ACTIVE_COLOUR'"
+        echo "Deployment colour is valid: '$REQUESTED_COLOUR'"
 
-        if [[ "$ACTIVE_COLOUR" == "blue" ]]; then
+        if [[ "$REQUESTED_COLOUR" == "blue" ]]; then
           echo "BLUE image tag: '$BLUE_IMAGE_TAG'"
         else
           echo "GREEN image tag: '$GREEN_IMAGE_TAG'"
@@ -90,7 +90,8 @@ jobs:
       GREEN_RUNNING_IMAGE_TAG: ${{ steps.current-image-versions.outputs.GREEN_RUNNING_IMAGE_TAG }}
       ACTIVE_DEPLOYMENT_COLOUR: ${{ steps.current-image-versions.outputs.ACTIVE_DEPLOYMENT_COLOUR }}
       LISTENER_ARN: ${{ steps.current-image-versions.outputs.LISTENER_ARN }}
-      TARGET_GROUP_ARN: ${{ steps.current-image-versions.outputs.TARGET_GROUP_ARN }}
+      ACTIVE_TARGET_GROUP_ARN: ${{ steps.current-image-versions.outputs.ACTIVE_TARGET_GROUP_ARN }}
+      REQUESTED_TARGET_GROUP_ARN: ${{ steps.current-image-versions.outputs.REQUESTED_TARGET_GROUP_ARN }}
     permissions:
       id-token: write
       contents: read
@@ -106,15 +107,20 @@ jobs:
         id: current-image-versions
         env:
           ENVIRONMENT: ${{ inputs.environment }}
+          REQUESTED_DEPLOYMENT_COLOUR: ${{ inputs.deployment_colour }}
         run: |
           set -e
 
           if [ "$ENVIRONMENT" = "sandbox" ]; then
             CLUSTER_NAME="hmpps-development-delius-jitbit-sandbox"
             LOAD_BALANCER_NAME="delius-jitbit-lb-sandbox"
+            BLUE_TARGET_GROUP_NAME="delius-jitbit-sandbox-blue"
+            GREEN_TARGET_GROUP_NAME="delius-jitbit-sandbox-green"
           else
             CLUSTER_NAME="hmpps-${ENVIRONMENT}-delius-jitbit"
             LOAD_BALANCER_NAME="delius-jitbit-lb"
+            BLUE_TARGET_GROUP_NAME="delius-jitbit-blue"
+            GREEN_TARGET_GROUP_NAME="delius-jitbit-green"
           fi
 
           echo "Using ECS cluster: $CLUSTER_NAME"
@@ -123,11 +129,19 @@ jobs:
 
           LISTENER_ARN=$(aws elbv2 describe-listeners --load-balancer-arn "$LOAD_BALANCER_ARN" --query 'Listeners[0].ListenerArn' --output text)
 
-          TARGET_GROUP_ARN=$(aws elbv2 describe-listeners --listener-arns "$LISTENER_ARN" --query 'Listeners[0].DefaultActions[0].TargetGroupArn' --output text)
+          BLUE_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --names "$BLUE_TARGET_GROUP_NAME" --query 'TargetGroups[0].TargetGroupArn'  --output text)
+          GREEN_TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups --names "$GREEN_TARGET_GROUP_NAME" --query 'TargetGroups[0].TargetGroupArn' --output text)
 
-          TARGET_GROUP_NAME=$(aws elbv2 describe-target-groups --target-group-arns "$TARGET_GROUP_ARN" --query 'TargetGroups[0].TargetGroupName' --output text)
+          # Active Target Group
+          ACTIVE_TARGET_GROUP_ARN=$(aws elbv2 describe-listeners --listener-arns "$LISTENER_ARN" --query 'Listeners[0].DefaultActions[0].TargetGroupArn' --output text)
+          ACTIVE_TARGET_GROUP_NAME=$(aws elbv2 describe-target-groups --target-group-arns "$ACTIVE_TARGET_GROUP_ARN" --query 'TargetGroups[0].TargetGroupName' --output text)
+          ACTIVE_COLOUR="${ACTIVE_TARGET_GROUP_NAME##*-}"
 
-          ACTIVE_COLOUR="${TARGET_GROUP_NAME##*-}"
+          if [ "$REQUESTED_DEPLOYMENT_COLOUR" = "blue" ]; then
+            REQUESTED_TARGET_GROUP_ARN="$BLUE_TARGET_GROUP_ARN"
+          else
+            REQUESTED_TARGET_GROUP_ARN="$GREEN_TARGET_GROUP_ARN"
+          fi
 
           BLUE_IMAGE_TAG=""
           GREEN_IMAGE_TAG=""
@@ -157,6 +171,8 @@ jobs:
           echo "GREEN_RUNNING_IMAGE_TAG=$GREEN_IMAGE_TAG" >> "$GITHUB_OUTPUT"
           echo "ACTIVE_DEPLOYMENT_COLOUR=$ACTIVE_COLOUR" >> "$GITHUB_OUTPUT"
           echo "LISTENER_ARN=$LISTENER_ARN" >> "$GITHUB_OUTPUT"
+          echo "ACTIVE_TARGET_GROUP_ARN=$ACTIVE_TARGET_GROUP_ARN" >> "$GITHUB_OUTPUT"
+          echo "REQUESTED_TARGET_GROUP_ARN=$REQUESTED_TARGET_GROUP_ARN" >> "$GITHUB_OUTPUT"
 
           echo ""
           echo "========================================"
@@ -172,22 +188,26 @@ jobs:
           echo ""
           echo "  Deployment Colour"
           echo "    Currently active  : $ACTIVE_COLOUR"
-          echo "    Requested         : ${{ inputs.active_deployment_colour }}"
+          echo "    Requested         : ${{ inputs.deployment_colour }}"
           echo "========================================"
 
       - name: Display ECS deployment versions
+        env:
+          BLUE_IMAGE_TAG: ${{ steps.current-image-versions.outputs.BLUE_RUNNING_IMAGE_TAG }}
+          GREEN_IMAGE_TAG: ${{ steps.current-image-versions.outputs.GREEN_RUNNING_IMAGE_TAG }}
+          ACTIVE_COLOUR: ${{ steps.current-image-versions.outputs.ACTIVE_DEPLOYMENT_COLOUR }}
         run: |
           {
             echo "## ECS Deployment Versions"
             echo ""
             echo "| | Currently running | Requested |"
             echo "|---|---|---|"
-            echo "| 🔵 **Blue** | \`${BLUE_IMAGE_TAG:-<not running>}\` | \`${{ inputs.blue_image_tag || '<destroy>' }}\` |"
-            echo "| 🟢 **Green** | \`${GREEN_IMAGE_TAG:-<not running>}\` | \`${{ inputs.green_image_tag || '<destroy>' }}\` |"
+            echo "| 🔵 **Blue** | \`${BLUE_IMAGE_TAG:- Disabled}\` | \`${{ inputs.blue_image_tag || 'Disabled' }}\` |"
+            echo "| 🟢 **Green** | \`${GREEN_IMAGE_TAG:- Disabled}\` | \`${{ inputs.green_image_tag || 'Disabled' }}\` |"
             echo ""
             echo "| Deployment colour | Current | Requested |"
             echo "|---|---|---|"
-            echo "| **Active** | \`${ACTIVE_COLOUR}\` | \`${{ inputs.active_deployment_colour }}\` |"
+            echo "| **Active** | \`${ACTIVE_COLOUR}\` | \`${{ inputs.deployment_colour }}\` |"
           } >> "$GITHUB_STEP_SUMMARY"
 
   plan:
@@ -254,7 +274,7 @@ jobs:
         id: determine
         env:
           CURRENT_ACTIVE: ${{ needs.display-versions.outputs.ACTIVE_DEPLOYMENT_COLOUR }}
-          REQUESTED_ACTIVE: ${{ inputs.active_deployment_colour }}
+          REQUESTED_ACTIVE: ${{ inputs.deployment_colour }}
           BLUE_RUNNING: ${{ needs.display-versions.outputs.BLUE_RUNNING_IMAGE_TAG }}
           GREEN_RUNNING: ${{ needs.display-versions.outputs.GREEN_RUNNING_IMAGE_TAG }}
           BLUE_REQUESTED: ${{ inputs.blue_image_tag }}
@@ -383,7 +403,7 @@ jobs:
       - name: Update listener forwarding rule
         if: ${{ needs.deployment-order.outputs.order == 'listener-first' }}
         run: |
-          aws elbv2 modify-listener --listener-arn "${{ needs.display-versions.outputs.LISTENER_ARN }}" --default-actions Type=forward,TargetGroupArn="${{ needs.display-versions.outputs.TARGET_GROUP_ARN }}"
+          aws elbv2 modify-listener --listener-arn "${{ needs.display-versions.outputs.LISTENER_ARN }}" --default-actions Type=forward,TargetGroupArn="${{ needs.display-versions.outputs.REQUESTED_TARGET_GROUP_ARN }}"
 
       - name: Terraform Apply
         id: tf-apply
@@ -399,7 +419,7 @@ jobs:
           echo "LISTENER_ARN=$(terraform output -raw listener_arn)" >> $GITHUB_OUTPUT
           echo "BLUE_SERVICE_ARN=$(terraform output -raw ecs_service_arn_blue)" >> $GITHUB_OUTPUT
           echo "GREEN_SERVICE_ARN=$(terraform output -raw ecs_service_arn_green)" >> $GITHUB_OUTPUT
-          echo "TARGET_GROUP_ARN=$(terraform output -raw target_group_arn_${{ inputs.active_deployment_colour }})" >> $GITHUB_OUTPUT
+          echo "REQUESTED_TARGET_GROUP_ARN=$(terraform output -raw target_group_arn_${{ inputs.deployment_colour }})" >> $GITHUB_OUTPUT
 
       - name: Ensure service stable (BLUE)
         if: ${{ needs.display-versions.outputs.BLUE_RUNNING_IMAGE_TAG != inputs.blue_image_tag && steps.tf-apply.outputs.BLUE_SERVICE_ARN != '' }}
@@ -414,7 +434,7 @@ jobs:
       - name: Update listener forwarding rule
         if: ${{ needs.deployment-order.outputs.order == 'terraform-first' }}
         run: |
-          aws elbv2 modify-listener --listener-arn ${{ steps.tf-apply.outputs.LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ steps.tf-apply.outputs.TARGET_GROUP_ARN }}
+          aws elbv2 modify-listener --listener-arn ${{ steps.tf-apply.outputs.LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ steps.tf-apply.outputs.REQUESTED_TARGET_GROUP_ARN }}
 
       - name: Alert Slack failure
         if: "${{ failure() && github.ref == 'refs/heads/main' }}"
