@@ -1,0 +1,427 @@
+name: "(TEST VERSION) Resuable: Deploy to a single env"
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      blue_image_tag:
+        required: false
+        type: string
+        default: ""
+      green_image_tag:
+        required: false
+        type: string
+        default: ""
+      active_deployment_colour:
+        required: true
+        type: string
+        default: ""
+  workflow_dispatch:
+    inputs:
+      environment:
+        required: true
+        type: choice
+        options:
+          - sandbox
+          - development
+          - test
+          - preproduction
+          - production
+      blue_image_tag:
+        required: false
+        type: string
+        default: ""
+      green_image_tag:
+        required: false
+        type: string
+        default: ""
+      active_deployment_colour:
+        required: true
+        type: choice
+        options:
+          - blue
+          - green
+          - ""
+        default: ""
+
+jobs:
+  validate-input-blue-green:
+    name: Validate Inputs
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check if active_deployment_colour input is "blue" or "green"
+      env:
+        ACTIVE_COLOUR: ${{ inputs.active_deployment_colour || github.event.inputs.active_deployment_colour }}
+        BLUE_IMAGE_TAG: ${{ inputs.blue_image_tag || github.event.inputs.blue_image_tag }}
+        GREEN_IMAGE_TAG: ${{ inputs.green_image_tag || github.event.inputs.green_image_tag }}
+      run: |
+        if [[ "$ACTIVE_COLOUR" != "blue" && "$ACTIVE_COLOUR" != "green" ]]; then
+          echo "Invalid value for input 'active_deployment_colour'. Must be either 'blue' or 'green'."
+          echo "Value provided: '$ACTIVE_COLOUR'"
+          exit 1
+        fi
+
+        if [[ "$ACTIVE_COLOUR" == "blue" && -z "$BLUE_IMAGE_TAG" ]]; then
+          echo "Cannot deploy BLUE because no blue_image_tag was provided."
+          exit 1
+        fi
+
+        if [[ "$ACTIVE_COLOUR" == "green" && -z "$GREEN_IMAGE_TAG" ]]; then
+          echo "Cannot deploy GREEN because no green_image_tag was provided."
+          exit 1
+        fi
+
+        echo "Deployment colour is valid: '$ACTIVE_COLOUR'"
+
+        if [[ "$ACTIVE_COLOUR" == "blue" ]]; then
+          echo "BLUE image tag: '$BLUE_IMAGE_TAG'"
+        else
+          echo "GREEN image tag: '$GREEN_IMAGE_TAG'"
+        fi
+  
+  display-versions:
+    name: Display Jitbit Version/Colour Updates
+    runs-on: ubuntu-latest
+    needs: validate-input-blue-green
+    environment: ${{ inputs.environment }}-plan
+    outputs:
+      BLUE_RUNNING_IMAGE_TAG: ${{ steps.current-image-versions.outputs.BLUE_RUNNING_IMAGE_TAG }}
+      GREEN_RUNNING_IMAGE_TAG: ${{ steps.current-image-versions.outputs.GREEN_RUNNING_IMAGE_TAG }}
+      ACTIVE_DEPLOYMENT_COLOUR: ${{ steps.current-image-versions.outputs.ACTIVE_DEPLOYMENT_COLOUR }}
+      LISTENER_ARN: ${{ steps.current-image-versions.outputs.LISTENER_ARN }}
+      TARGET_GROUP_ARN: ${{ steps.current-image-versions.outputs.TARGET_GROUP_ARN }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+          role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
+          aws-region: "eu-west-2"
+
+      - name: Get currently running blue/green image version
+        id: current-image-versions
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          set -e
+
+          if [ "$ENVIRONMENT" = "sandbox" ]; then
+            CLUSTER_NAME="hmpps-development-delius-jitbit-sandbox"
+            LOAD_BALANCER_NAME="delius-jitbit-lb-sandbox"
+          else
+            CLUSTER_NAME="hmpps-${ENVIRONMENT}-delius-jitbit"
+            LOAD_BALANCER_NAME="delius-jitbit-lb"
+          fi
+
+          echo "Using ECS cluster: $CLUSTER_NAME"
+
+          LOAD_BALANCER_ARN=$(aws elbv2 describe-load-balancers --names "$LOAD_BALANCER_NAME" --query 'LoadBalancers[0].LoadBalancerArn' --output text)
+
+          LISTENER_ARN=$(aws elbv2 describe-listeners --load-balancer-arn "$LOAD_BALANCER_ARN" --query 'Listeners[0].ListenerArn' --output text)
+
+          TARGET_GROUP_ARN=$(aws elbv2 describe-listeners --listener-arns "$LISTENER_ARN" --query 'Listeners[0].DefaultActions[0].TargetGroupArn' --output text)
+
+          TARGET_GROUP_NAME=$(aws elbv2 describe-target-groups --target-group-arns "$TARGET_GROUP_ARN" --query 'TargetGroups[0].TargetGroupName' --output text)
+
+          ACTIVE_COLOUR="${TARGET_GROUP_NAME##*-}"
+
+          BLUE_IMAGE_TAG=""
+          GREEN_IMAGE_TAG=""
+
+          SERVICES=$(aws ecs list-services --cluster "$CLUSTER_NAME" --query 'serviceArns[]' --output text)
+
+          for SERVICE_ARN in $SERVICES; do
+            SERVICE_NAME=$(aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$SERVICE_ARN" --query 'services[0].serviceName' --output text)
+
+            TASK_DEF_ARN=$(aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$SERVICE_ARN" --query 'services[0].taskDefinition' --output text)
+
+            IMAGE=$(aws ecs describe-task-definition --task-definition "$TASK_DEF_ARN" --query 'taskDefinition.containerDefinitions[0].image' --output text)
+
+            IMAGE_TAG="${IMAGE##*:}"
+
+            case "$SERVICE_NAME" in
+              *-blue)
+                BLUE_IMAGE_TAG="$IMAGE_TAG"
+                ;;
+              *-green)
+                GREEN_IMAGE_TAG="$IMAGE_TAG"
+                ;;
+            esac
+          done
+
+          echo "BLUE_RUNNING_IMAGE_TAG=$BLUE_IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          echo "GREEN_RUNNING_IMAGE_TAG=$GREEN_IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          echo "ACTIVE_DEPLOYMENT_COLOUR=$ACTIVE_COLOUR" >> "$GITHUB_OUTPUT"
+          echo "LISTENER_ARN=$LISTENER_ARN" >> "$GITHUB_OUTPUT"
+
+          echo ""
+          echo "========================================"
+          echo "        ECS Deployment Versions"
+          echo "========================================"
+          echo "  BLUE"
+          echo "    Currently running : ${BLUE_IMAGE_TAG:-<not running>}"
+          echo "    Requested         : ${{ inputs.blue_image_tag }}"
+          echo ""
+          echo "  GREEN"
+          echo "    Currently running : ${GREEN_IMAGE_TAG:-<not running>}"
+          echo "    Requested         : ${{ inputs.green_image_tag }}"
+          echo ""
+          echo "  Deployment Colour"
+          echo "    Currently active  : $ACTIVE_COLOUR"
+          echo "    Requested         : ${{ inputs.active_deployment_colour }}"
+          echo "========================================"
+
+      - name: Display ECS deployment versions
+        run: |
+          {
+            echo "## ECS Deployment Versions"
+            echo ""
+            echo "| | Currently running | Requested |"
+            echo "|---|---|---|"
+            echo "| 🔵 **Blue** | \`${BLUE_IMAGE_TAG:-<not running>}\` | \`${{ inputs.blue_image_tag || '<destroy>' }}\` |"
+            echo "| 🟢 **Green** | \`${GREEN_IMAGE_TAG:-<not running>}\` | \`${{ inputs.green_image_tag || '<destroy>' }}\` |"
+            echo ""
+            echo "| Deployment colour | Current | Requested |"
+            echo "|---|---|---|"
+            echo "| **Active** | \`${ACTIVE_COLOUR}\` | \`${{ inputs.active_deployment_colour }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  plan:
+    name: Plan - ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    needs: display-versions
+    outputs:
+      plan_exitcode: "${{ steps.plan.outputs.exitcode }}"
+    environment: ${{ inputs.environment }}-plan
+    strategy:
+      fail-fast: false
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+          role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
+          aws-region: "eu-west-2"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: "1.10.0"
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: |
+          terraform --version
+          echo "terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl"
+          terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl
+
+      - name: Terraform Plan
+        id: tf-plan
+        working-directory: terraform
+        run: |
+          set -o pipefail
+          exitcode=0
+          tfargs="-detailed-exitcode"
+          echo "terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="blue_image_tag=${{ inputs.blue_image_tag }}" -var="green_image_tag=${{ inputs.green_image_tag }}" $tfargs | tee tfplan.txt || exitcode=$?"
+          terraform plan -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="blue_image_tag=${{ inputs.blue_image_tag }}" -var="green_image_tag=${{ inputs.green_image_tag }}" $tfargs | tee tfplan.txt || exitcode=$?
+          echo "exitcode=${exitcode}"  # 0=clean plan, 1=error, 2=stuff in plan
+          echo "exitcode=${exitcode}" >> $GITHUB_OUTPUT
+          (( exitcode == 1 )) && exit 1 || exit 0
+
+  # Determine whether the active colour should be switched before or after the Terraform apply
+  deployment-order:
+    name: Determine deployment order - ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    needs: 
+      - plan
+      - display-versions
+    outputs:
+      order: ${{ steps.determine.outputs.order }}
+      message: ${{ steps.determine.outputs.message }}
+    steps:
+      - name: Determine deployment order
+        id: determine
+        env:
+          CURRENT_ACTIVE: ${{ needs.display-versions.outputs.ACTIVE_DEPLOYMENT_COLOUR }}
+          REQUESTED_ACTIVE: ${{ inputs.active_deployment_colour }}
+          BLUE_RUNNING: ${{ needs.display-versions.outputs.BLUE_RUNNING_IMAGE_TAG }}
+          GREEN_RUNNING: ${{ needs.display-versions.outputs.GREEN_RUNNING_IMAGE_TAG }}
+          BLUE_REQUESTED: ${{ inputs.blue_image_tag }}
+          GREEN_REQUESTED: ${{ inputs.green_image_tag }}
+        run: |
+          set -e
+
+          # Get the requested version for the currently active service.
+          if [ "$CURRENT_ACTIVE" = "blue" ]; then
+            CURRENT_ACTIVE_REQUESTED="$BLUE_REQUESTED"
+            CURRENT_ACTIVE_RUNNING="$BLUE_RUNNING"
+          else
+            CURRENT_ACTIVE_REQUESTED="$GREEN_REQUESTED"
+            CURRENT_ACTIVE_RUNNING="$GREEN_RUNNING"
+          fi
+
+          # Get the currently running version for the requested active service.
+          if [ "$REQUESTED_ACTIVE" = "blue" ]; then
+            REQUESTED_ACTIVE_RUNNING="$BLUE_RUNNING"
+            REQUESTED_ACTIVE_REQUESTED="$BLUE_REQUESTED"
+          else
+            REQUESTED_ACTIVE_RUNNING="$GREEN_RUNNING"
+            REQUESTED_ACTIVE_REQUESTED="$GREEN_REQUESTED"
+          fi
+
+          # One service must always be running
+          if [ -z "$CURRENT_ACTIVE_REQUESTED" ] && [ "$CURRENT_ACTIVE" = "$REQUESTED_ACTIVE" ]; then
+            echo "::error::Invalid deployment: the currently active ${CURRENT_ACTIVE^^} service is being destroyed, but ${REQUESTED_ACTIVE^^} is also requested to remain active."
+            exit 1
+          fi
+
+          if [ -z "$CURRENT_ACTIVE_REQUESTED" ] && [ "$CURRENT_ACTIVE" != "$REQUESTED_ACTIVE" ] && [ -n "$REQUESTED_ACTIVE_RUNNING" ] && [ "$REQUESTED_ACTIVE_RUNNING" != "$REQUESTED_ACTIVE_REQUESTED" ]; then
+            echo "::error::Invalid deployment: the currently active ${CURRENT_ACTIVE^^} service is being destroyed while the ${REQUESTED_ACTIVE^^} service is being upgraded from ${REQUESTED_ACTIVE_RUNNING} to ${REQUESTED_ACTIVE_REQUESTED}. At least one service must remain stable during deployment."
+            exit 1
+          fi
+
+          #
+          # Determine deployment order.
+          #
+
+          if [ -z "$CURRENT_ACTIVE_REQUESTED" ]; then
+            ORDER="listener-first"
+            MESSAGE="The ${CURRENT_ACTIVE^^} service will be destroyed. ${REQUESTED_ACTIVE^^} is already running the requested version (${REQUESTED_ACTIVE_REQUESTED}), so the listener will switch to ${REQUESTED_ACTIVE^^} before Terraform runs."
+
+          elif [ "$CURRENT_ACTIVE" != "$REQUESTED_ACTIVE" ] && [ -n "$REQUESTED_ACTIVE_RUNNING" ] && [ "$REQUESTED_ACTIVE_RUNNING" = "$REQUESTED_ACTIVE_REQUESTED" ]; then
+            ORDER="listener-first"
+            MESSAGE="${REQUESTED_ACTIVE^^} is already running the requested version (${REQUESTED_ACTIVE_REQUESTED}). The listener will switch from ${CURRENT_ACTIVE^^} to ${REQUESTED_ACTIVE^^} before Terraform runs."
+
+          elif [ "$CURRENT_ACTIVE" != "$REQUESTED_ACTIVE" ] && [ -z "$REQUESTED_ACTIVE_RUNNING" ]; then
+            ORDER="terraform-first"
+            MESSAGE="${REQUESTED_ACTIVE^^} is not currently running. Terraform will create it and wait for it to become stable before the listener switches from ${CURRENT_ACTIVE^^} to ${REQUESTED_ACTIVE^^}."
+
+          # Same colour remains active and the service is not being destroyed.
+          else
+            ORDER="terraform-only"
+            MESSAGE="${CURRENT_ACTIVE^^} will remain active. Terraform will deploy the requested changes and the listener will remain unchanged."
+          fi
+
+          echo "order=$ORDER" >> "$GITHUB_OUTPUT"
+          echo "message=$MESSAGE" >> "$GITHUB_OUTPUT"
+
+          echo ""
+          echo "=================================================="
+          echo "              Deployment Plan"
+          echo "=================================================="
+          echo ""
+          echo "  Current active   : ${CURRENT_ACTIVE^^}"
+          echo "  Requested active : ${REQUESTED_ACTIVE^^}"
+          echo ""
+          echo "  Current ${CURRENT_ACTIVE^^} version : ${CURRENT_ACTIVE_RUNNING:-<not running>}"
+          echo "  Requested ${CURRENT_ACTIVE^^} version : ${CURRENT_ACTIVE_REQUESTED:-<destroy>}"
+          echo ""
+          echo "  Current ${REQUESTED_ACTIVE^^} version : ${REQUESTED_ACTIVE_RUNNING:-<not running>}"
+          echo "  Requested ${REQUESTED_ACTIVE^^} version : ${REQUESTED_ACTIVE_REQUESTED:-<destroy>}"
+          echo ""
+          echo "  Deployment order : $ORDER"
+          echo "  $MESSAGE"
+          echo ""
+          echo "=================================================="
+
+      - name: Add deployment plan to summary
+        env:
+          ORDER: ${{ steps.determine.outputs.order }}
+          MESSAGE: ${{ steps.determine.outputs.message }}
+        run: |
+          {
+            echo "## Deployment plan"
+            echo ""
+            echo "**Environment:** \`${{ inputs.environment }}\`"
+            echo ""
+            echo "**Execution order:** \`$ORDER\`"
+            echo ""
+            echo "$MESSAGE"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Deploy - ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    needs: 
+      - display-versions
+      - plan
+      - deployment-order
+    permissions:
+      id-token: write
+      contents: read
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
+        with:
+          role-to-assume: "arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/modernisation-platform-oidc-cicd"
+          role-session-name: "hmpps-cr-ancillary-jitbit-app-${{ github.run_number }}"
+          aws-region: "eu-west-2"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: "1.10.0"
+          terraform_wrapper: false
+      
+      - name: Update listener forwarding rule
+        if: ${{ needs.deployment-order.outputs.order == 'listener-first' }}
+        run: |
+          aws elbv2 modify-listener --listener-arn "${{ needs.display-versions.outputs.LISTENER_ARN }}" --default-actions Type=forward,TargetGroupArn="${{ needs.display-versions.outputs.TARGET_GROUP_ARN }}"
+
+      - name: Terraform Apply
+        id: tf-apply
+        env:
+          BLUE_IMAGE_TAG: ${{ inputs.blue_image_tag }}
+          GREEN_IMAGE_TAG: ${{ inputs.green_image_tag }}
+        run: |
+          set -e
+          cd terraform
+          terraform init -backend-config=environments/${{ inputs.environment }}/backend.hcl
+          terraform apply -auto-approve -var-file=environments/${{ inputs.environment }}/terraform.tfvars -var="blue_image_tag=$(echo ${{ env.BLUE_IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')" -var="green_image_tag=$(echo ${{ env.GREEN_IMAGE_TAG }} | sed 's/[^a-zA-Z0-9.]/-/g')"
+          echo "CLUSTER_ARN=$(terraform output -raw ecs_cluster_arn)" >> $GITHUB_OUTPUT
+          echo "LISTENER_ARN=$(terraform output -raw listener_arn)" >> $GITHUB_OUTPUT
+          echo "BLUE_SERVICE_ARN=$(terraform output -raw ecs_service_arn_blue)" >> $GITHUB_OUTPUT
+          echo "GREEN_SERVICE_ARN=$(terraform output -raw ecs_service_arn_green)" >> $GITHUB_OUTPUT
+          echo "TARGET_GROUP_ARN=$(terraform output -raw target_group_arn_${{ inputs.active_deployment_colour }})" >> $GITHUB_OUTPUT
+
+      - name: Ensure service stable (BLUE)
+        if: ${{ needs.display-versions.outputs.BLUE_RUNNING_IMAGE_TAG != inputs.blue_image_tag && steps.tf-apply.outputs.BLUE_SERVICE_ARN != '' }}
+        run: |
+          aws ecs wait services-stable --cluster ${{ steps.tf-apply.outputs.CLUSTER_ARN }} --services ${{ steps.tf-apply.outputs.BLUE_SERVICE_ARN }}
+
+      - name: Ensure service stable (GREEN)
+        if: ${{ needs.display-versions.outputs.GREEN_RUNNING_IMAGE_TAG != inputs.blue_image_tag && steps.tf-apply.outputs.GREEN_SERVICE_ARN != '' }}
+        run: |
+          aws ecs wait services-stable --cluster ${{ steps.tf-apply.outputs.CLUSTER_ARN }} --services ${{ steps.tf-apply.outputs.GREEN_SERVICE_ARN }}
+      
+      - name: Update listener forwarding rule
+        if: ${{ needs.deployment-order.outputs.order == 'terraform-first' }}
+        run: |
+          aws elbv2 modify-listener --listener-arn ${{ steps.tf-apply.outputs.LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ steps.tf-apply.outputs.TARGET_GROUP_ARN }}
+
+      - name: Alert Slack failure
+        if: "${{ failure() && github.ref == 'refs/heads/main' }}"
+        run: |
+          curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":fail: Deployment Failed"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"Deployment to the ${{ inputs.environment }} account failed"},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Alert Slack Success
+        if: "${{ success() && github.ref == 'refs/heads/main' }}"
+        run: |
+          curl --silent -X POST -H 'Content-type: application/json' --data '{"blocks":[{"type":"header","text":{"type":"plain_text","text":":white_check_mark: Deployment Succeeded"}},{"type":"divider"},{"type":"section","text":{"type":"mrkdwn","text":"TF Apply Succeeded and the Service is stable in the ${{ inputs.environment }} account."},	"accessory": {"type": "button","text": {"type": "plain_text","text": ":github: View Job","emoji": true}, "value": "click_me_123", "url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "action_id": "button-action"}}]}' ${{ secrets.SLACK_WEBHOOK_URL }}
