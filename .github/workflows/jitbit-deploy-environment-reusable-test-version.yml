@@ -176,6 +176,10 @@ jobs:
           echo "========================================"
 
       - name: Display ECS deployment versions
+        env:
+          BLUE_IMAGE_TAG: ${{ steps.current-image-versions.outputs.BLUE_RUNNING_IMAGE_TAG }}
+          GREEN_IMAGE_TAG: ${{ steps.current-image-versions.outputs.GREEN_RUNNING_IMAGE_TAG }}
+          ACTIVE_COLOUR: ${{ steps.current-image-versions.outputs.ACTIVE_DEPLOYMENT_COLOUR }}
         run: |
           {
             echo "## ECS Deployment Versions"
