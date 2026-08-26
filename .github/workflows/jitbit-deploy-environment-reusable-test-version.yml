@@ -107,7 +107,7 @@ jobs:
         id: current-image-versions
         env:
           ENVIRONMENT: ${{ inputs.environment }}
-          REQUESTED_DEPLYOMENT_COLOUR: ${{ inputs.deployment_colour }}
+          REQUESTED_DEPLOYMENT_COLOUR: ${{ inputs.deployment_colour }}
         run: |
           set -e
 
