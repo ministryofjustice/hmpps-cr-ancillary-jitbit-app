@@ -335,7 +335,8 @@ jobs:
           # Same colour remains active and the service is being upgraded. (Results in downtime)
           else
             ORDER="terraform-only"
-            MESSAGE="${CURRENT_ACTIVE^^} will remain active. Terraform will deploy the requested changes and the listener will remain unchanged.\n\n⚠️⚠️⚠️ WARNING: There will be downtime while the new version is being deployed. This is not suitable for production deployments.⚠️⚠️⚠️"
+            MESSAGE="${CURRENT_ACTIVE^^} will remain active. Terraform will deploy the requested changes and the listener will remain unchanged.
+            ⚠️⚠️⚠️ WARNING: There will be downtime while the new version is being deployed. This is not suitable for production deployments. ⚠️⚠️⚠️"
           fi
 
           echo "order=$ORDER" >> "$GITHUB_OUTPUT"
