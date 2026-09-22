@@ -336,8 +336,8 @@ jobs:
           else
             ORDER="terraform-only"
             MESSAGE="${CURRENT_ACTIVE^^} will remain active. Terraform will deploy the requested changes and the listener will remain unchanged.
-            
-            ⚠️⚠️⚠️ WARNING: There will be downtime while the new version is being deployed. **This is not suitable for production deployments.*** ⚠️⚠️⚠️"
+
+            ⚠️⚠️⚠️ **WARNING:** There will be downtime while the new version is being deployed. **This is not suitable for PRODUCTION deployments.** ⚠️⚠️⚠️"
           fi
 
           echo "order=$ORDER" >> "$GITHUB_OUTPUT"
