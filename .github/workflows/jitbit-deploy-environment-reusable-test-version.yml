@@ -323,6 +323,12 @@ jobs:
             ORDER="listener-first"
             MESSAGE="${REQUESTED_ACTIVE^^} is already running the requested version (${REQUESTED_ACTIVE_REQUESTED}). The listener will switch from ${CURRENT_ACTIVE^^} to ${REQUESTED_ACTIVE^^} before Terraform runs."
 
+          elif [[ -n "$BLUE_RUNNING" && "$BLUE_RUNNING" != "$BLUE_REQUESTED" && -n "$GREEN_RUNNING" && "$GREEN_RUNNING" != "$GREEN_REQUESTED" ]]; then
+            ORDER="terraform-first"
+            MESSAGE="Both BLUE and GREEN services are being upgraded at the same time. Terraform will deploy the changes.
+
+            ⚠️⚠️⚠️ **WARNING:** There will be downtime while the new versions are being deployed. **This is not suitable for PRODUCTION deployments.** ⚠️⚠️⚠️"
+
           elif [ "$CURRENT_ACTIVE" != "$REQUESTED_ACTIVE" ] && [ -z "$REQUESTED_ACTIVE_RUNNING" ]; then
             ORDER="terraform-first"
             MESSAGE="${REQUESTED_ACTIVE^^} is not currently running. Terraform will create it and wait for it to become stable before the listener switches from ${CURRENT_ACTIVE^^} to ${REQUESTED_ACTIVE^^}."
@@ -331,12 +337,6 @@ jobs:
           elif [ "$CURRENT_ACTIVE" = "$REQUESTED_ACTIVE" ] && [ "$CURRENT_ACTIVE_RUNNING" = "$CURRENT_ACTIVE_REQUESTED" ]; then
             ORDER="terraform-only"
             MESSAGE="${CURRENT_ACTIVE^^} will remain active. Terraform will deploy the requested changes and the listener will remain unchanged."
-
-          elif [[ -n "$BLUE_RUNNING" && "$BLUE_RUNNING" != "$BLUE_REQUESTED" && -n "$GREEN_RUNNING" && "$GREEN_RUNNING" != "$GREEN_REQUESTED" ]]; then
-            ORDER="terraform-first"
-            MESSAGE="Both BLUE and GREEN services are being upgraded at the same time. Terraform will deploy the changes.
-
-            ⚠️⚠️⚠️ **WARNING:** There will be downtime while the new versions are being deployed. **This is not suitable for PRODUCTION deployments.** ⚠️⚠️⚠️"
 
           # Same colour remains active and the service is being upgraded. (Results in downtime)
           else
