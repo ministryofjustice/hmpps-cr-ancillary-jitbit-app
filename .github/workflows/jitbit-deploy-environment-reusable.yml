@@ -1,4 +1,4 @@
-name: "(TEST VERSION) Resuable: Deploy to a single env"
+name: "Reusable: Deploy to a single env"
 on:
   workflow_call:
     inputs:
