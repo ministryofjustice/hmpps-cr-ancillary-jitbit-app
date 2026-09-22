@@ -327,10 +327,15 @@ jobs:
             ORDER="terraform-first"
             MESSAGE="${REQUESTED_ACTIVE^^} is not currently running. Terraform will create it and wait for it to become stable before the listener switches from ${CURRENT_ACTIVE^^} to ${REQUESTED_ACTIVE^^}."
 
-          # Same colour remains active and the service is not being destroyed.
-          else
+          # Same colour remains active and the service is not being destroyed/upgraded.
+          elif [ "$CURRENT_ACTIVE" = "$REQUESTED_ACTIVE" ]; then
             ORDER="terraform-only"
             MESSAGE="${CURRENT_ACTIVE^^} will remain active. Terraform will deploy the requested changes and the listener will remain unchanged."
+
+          # Same colour remains active and the service is being upgraded. (Results in downtime)
+          else
+            ORDER="terraform-only"
+            MESSAGE="${CURRENT_ACTIVE^^} will remain active. Terraform will deploy the requested changes and the listener will remain unchanged.\n\n⚠️⚠️⚠️ WARNING: There will be downtime while the new version is being deployed. This is not suitable for production deployments.⚠️⚠️⚠️"
           fi
 
           echo "order=$ORDER" >> "$GITHUB_OUTPUT"
@@ -344,11 +349,13 @@ jobs:
           echo "  Current active   : ${CURRENT_ACTIVE^^}"
           echo "  Requested active : ${REQUESTED_ACTIVE^^}"
           echo ""
-          echo "  Current ${CURRENT_ACTIVE^^} version : ${CURRENT_ACTIVE_RUNNING:-<not running>}"
-          echo "  Requested ${CURRENT_ACTIVE^^} version : ${CURRENT_ACTIVE_REQUESTED:-<destroy>}"
+          echo "  BLUE"
+          echo "    Currently running : ${BLUE_IMAGE_TAG:-<not running>}"
+          echo "    Requested         : ${{ inputs.blue_image_tag }}"
           echo ""
-          echo "  Current ${REQUESTED_ACTIVE^^} version : ${REQUESTED_ACTIVE_RUNNING:-<not running>}"
-          echo "  Requested ${REQUESTED_ACTIVE^^} version : ${REQUESTED_ACTIVE_REQUESTED:-<destroy>}"
+          echo "  GREEN"
+          echo "    Currently running : ${GREEN_IMAGE_TAG:-<not running>}"
+          echo "    Requested         : ${{ inputs.green_image_tag }}"
           echo ""
           echo "  Deployment order : $ORDER"
           echo "  $MESSAGE"
