@@ -340,7 +340,12 @@ jobs:
           fi
 
           echo "order=$ORDER" >> "$GITHUB_OUTPUT"
-          echo "message=$MESSAGE" >> "$GITHUB_OUTPUT"
+          {
+            echo 'message<<EOF'
+            printf '%s\n' "$MESSAGE"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
 
           echo ""
           echo "=================================================="
