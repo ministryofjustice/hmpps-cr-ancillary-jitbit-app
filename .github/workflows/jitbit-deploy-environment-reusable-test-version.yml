@@ -328,7 +328,7 @@ jobs:
             MESSAGE="${REQUESTED_ACTIVE^^} is not currently running. Terraform will create it and wait for it to become stable before the listener switches from ${CURRENT_ACTIVE^^} to ${REQUESTED_ACTIVE^^}."
 
           # Same colour remains active and the service is not being destroyed/upgraded.
-          elif [ "$CURRENT_ACTIVE" = "$REQUESTED_ACTIVE" ]; then
+          elif [ "$CURRENT_ACTIVE" = "$REQUESTED_ACTIVE" ] && [ "$CURRENT_ACTIVE_RUNNING" = "$CURRENT_ACTIVE_REQUESTED" ]; then
             ORDER="terraform-only"
             MESSAGE="${CURRENT_ACTIVE^^} will remain active. Terraform will deploy the requested changes and the listener will remain unchanged."
 
