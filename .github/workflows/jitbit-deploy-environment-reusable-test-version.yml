@@ -305,9 +305,9 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
           echo ""
-          echo "=================================================="
+          echo "================================================="
           echo "              Deployment Plan"
-          echo "=================================================="
+          echo "================================================="
           echo ""
           echo "  Current active   : ${CURRENT_ACTIVE^^}"
           echo "  Requested active : ${REQUESTED_ACTIVE^^}"
@@ -323,7 +323,7 @@ jobs:
           echo "  Deployment order : $ORDER"
           echo "  $MESSAGE"
           echo ""
-          echo "=================================================="
+          echo "================================================="
 
       - name: Add deployment plan to summary
         env:
