@@ -215,7 +215,6 @@ jobs:
     name: Determine deployment order - ${{ inputs.environment }}
     runs-on: ubuntu-latest
     needs: 
-      - plan
       - display-versions
     outputs:
       order: ${{ steps.determine.outputs.order }}
@@ -343,7 +342,9 @@ jobs:
   plan:
       name: Plan - ${{ inputs.environment }}
       runs-on: ubuntu-latest
-      needs: display-versions
+      needs: 
+        - display-versions
+        - deployment-order
       outputs:
         plan_exitcode: "${{ steps.plan.outputs.exitcode }}"
       environment: ${{ inputs.environment }}-plan
